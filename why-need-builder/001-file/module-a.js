@@ -1,1 +1,1 @@
-var data = 'data';
+let data = 'data';
