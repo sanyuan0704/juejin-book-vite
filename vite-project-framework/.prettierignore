@@ -18,3 +18,4 @@ CNAME
 /build
 /public
 node_modules
+tsconfig.json

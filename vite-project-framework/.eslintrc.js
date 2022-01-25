@@ -8,7 +8,6 @@ module.exports = {
 		"plugin:react/recommended",
 		"plugin:@typescript-eslint/recommended",
 		"prettier",
-		"prettier/@typescript-eslint",
 		"plugin:prettier/recommended"
 	],
 	parser: "@typescript-eslint/parser",
@@ -23,6 +22,7 @@ module.exports = {
 	rules: {
 		"prettier/prettier": "error",
 		quotes: ["error", "double"],
-		semi: ["error", "always"]
+		semi: ["error", "always"],
+		"react/react-in-jsx-scope": "off"
 	}
 };
