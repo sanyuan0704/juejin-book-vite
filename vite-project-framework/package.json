@@ -5,7 +5,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "lint:script": "eslint --cache --ext .js,.jsx,.ts,.tsx --fix --quiet ./src",
+    "lint": "npm run lint:script && npm run lint:style",
+    "lint:script": "eslint --fix --ext .js,.jsx,.ts,.tsx --quiet ./",
     "lint:style": "stylelint --fix \"src/**/*.{css,scss}\"",
     "postinstall": "husky install"
   },
@@ -60,7 +61,7 @@
       "npm run lint:script",
       "git add --force"
     ],
-    "**/*.{scss}": [
+    "**/*.{css,scss}": [
       "npm run lint:style",
       "git add --force"
     ]

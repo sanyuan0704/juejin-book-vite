@@ -1,9 +1,7 @@
-@import "../../variable";
+@import '../../variable';
 
 .header {
-	margin: 20px;
-	color: #000;
-	text-align: center;
-
-	// color: $theme-color;
+  margin: 20px;
+  text-align: center;
+  color: $theme-color;
 }

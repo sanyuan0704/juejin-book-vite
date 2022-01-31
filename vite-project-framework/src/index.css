@@ -1,24 +1,24 @@
 body {
-	margin: 0;
-	font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 code {
-	font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-		monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
 }
 
 .insert {
-	display: block;
+  display: block;
 }
 
 .alter::after {
-	color: red;
-	content: "example";
+  color: red;
+  content: 'example';
 }
 
 .delete {
-	display: block;
+  display: block;
 }
