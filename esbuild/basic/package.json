@@ -1,0 +1,19 @@
+{
+  "name": "basic",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "./node_modules/.bin/esbuild src/index.jsx --bundle --outfile=dist/out.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "esbuild": "^0.14.18",
+    "esbuild-darwin-arm64": "^0.14.18",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
+  }
+}
