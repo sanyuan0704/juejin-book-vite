@@ -11,7 +11,10 @@
     "skipLibCheck": true /* Skip type checking all .d.ts files. */,
     "sourceMap": true,
     "baseUrl": "src",
-    "rootDir": "src"
+    "rootDir": "src",
+    "paths": {
+      "utils": ["src/utils"]
+    }
   },
   "include": ["src"]
 }

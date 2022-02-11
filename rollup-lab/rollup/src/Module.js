@@ -362,6 +362,10 @@ export default class Module {
         return;
       }
 
+      if (statement.type === "VariableDeclaration") {
+        return;
+      }
+
       // skip `export { foo, bar, baz }`
       if (
         statement.type === "ExportNamedDeclaration" &&
