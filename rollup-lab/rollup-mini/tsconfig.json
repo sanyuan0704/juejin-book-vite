@@ -12,6 +12,7 @@
     "sourceMap": true,
     "baseUrl": "src",
     "rootDir": "src",
+    "declaration": true,
     "paths": {
       "utils": ["src/utils"]
     }

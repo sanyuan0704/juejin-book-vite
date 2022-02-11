@@ -12,7 +12,8 @@
   "dependencies": {
     "acorn": "^8.7.0",
     "estree-walk": "^2.2.0",
-    "magic-string": "^0.25.7"
+    "magic-string": "^0.25.7",
+    "rollup": "0.20.0"
   },
   "devDependencies": {
     "@types/acorn": "^4.0.6",

@@ -41,6 +41,7 @@ export default class Module {
   statements: Statement[];
   imports: Imports;
   exports: Exports;
+  definitions: Record<string, Statement>;
   constructor({ path, bundle, source }: ModuleOptions) {
     this.bundle = bundle;
     this.path = path;
@@ -48,7 +49,7 @@ export default class Module {
     this.magicString = new MagicString(source);
     this.imports = {};
     this.exports = {};
-
+    this.definitions = {};
     try {
       const ast = parse(source, {
         ecmaVersion: 6,
@@ -60,7 +61,6 @@ export default class Module {
         const magicString = this.magicString.snip(node.start, node.end);
         return new Statement(node, magicString, this);
       });
-      // this.statements = ast.body.map(node)
     } catch (e) {
       console.log(e);
       throw e;
@@ -71,67 +71,79 @@ export default class Module {
   analyseAST() {
     this.collectImportAndExportsInfo();
     this.analyse();
+
+  }
+  addImports(statement: Statement) {
+    const node = statement.node as any;
+    const source = node.source.value;
+    // import
+    node.specifiers.forEach((specifier: Specifier) => {
+      const isDefault = specifier.type === 'ImportDefaultSpecifier';
+      const localName = specifier.local.name;
+      const name = isDefault ? 'default' : specifier.imported.name;
+      this.imports[localName] = { source, name, localName };
+    });
+  }
+
+  addExports(statement: Statement) {
+    const node = statement.node as any;
+    const source = node.source && node.source.value;
+    // export
+    // export defualt function foo(){}
+    // export default foo;
+    // export default 11;
+
+    const isDefaultExport = node.type === 'ExportDefaultDeclaration';
+    const isNamedExport = node.type === 'ExportNamedDeclaration';
+    // if (isDefault) {
+    //   this.exports['default'] = {
+    //     statement,
+    //     localName
+    //   };
+    // }
+    if (isNamedExport) {
+      if (node.specifiers.length) {
+        node.specifiers.forEach((specifier: Specifier) => {
+          const localName = specifier.local.name;
+          const exportedName = specifier.exported.name;
+          this.exports[exportedName] = {
+            localName,
+            name: exportedName
+          };
+          if (source) {
+            this.imports[localName] = {
+              source,
+              localName,
+              name: localName
+            };
+          }
+        });
+      } else {
+        const declaration = node.declaration;
+        let name;
+        if (declaration.type === 'VariableDeclaration') {
+          // export const foo = 2;
+          name = declaration.declarations[0].id.name;
+        } else {
+          // export function foo() {}
+          name = declaration.id.name;
+        }
+        this.exports[name] = {
+          statement,
+          localName: name,
+          name
+        };
+      }
+    } 
   }
 
   collectImportAndExportsInfo() {
     // 收集 imports 和 exports
     this.statements.forEach((statement) => {
-      const node = statement.node as any;
-      const source = node.source.value;
       if (statement.isImportDeclaration) {
-        // import
-        node.specifiers.forEach((specifier: Specifier) => {
-          const isDefault = specifier.type === 'ImportDefaultSpecifier';
-          const localName = specifier.local.name;
-          const name = isDefault ? 'default' : specifier.imported.name;
-          this.imports[localName] = { source, name, localName };
-        });
+        this.addImports(statement);
       } else if (statement.isExportDeclaration) {
-        // export
-        // export defualt function foo(){}
-        // export default foo;
-        // export default 11;
-
-        const isDefault = node.type === 'ExportDefaultDeclaration';
-        const isNamed = node.type === 'ExportNamedDeclaration';
-        // if (isDefault) {
-        //   this.exports['default'] = {
-        //     statement,
-        //     localName
-        //   };
-        // }
-        if (isNamed) {
-          node.specifiers.forEach((specifier: Specifier) => {
-            const localName = specifier.local.name;
-            const exportedName = specifier.exported.name;
-            this.exports[exportedName] = {
-              localName,
-              name: exportedName
-            };
-            if (source) {
-              this.imports[localName] = {
-                source,
-                localName,
-                name: localName
-              };
-            }
-          });
-        } else {
-          const declaration = node.declaration;
-          let name;
-          if (declaration.type === 'VariableDeclaration') {
-            // export const foo = 2;
-            name = declaration.declarations[0].id.name;
-          } else {
-            // export function foo() {}
-            name = declaration.id.name;
-          }
-          this.exports[name] = {
-            statement,
-            localName: name,
-            name
-          };
-        }
+        this.addExports(statement);
       }
     });
   }
@@ -139,6 +151,56 @@ export default class Module {
   analyse() {
     this.statements.forEach((statement) => {
       statement.analyse();
+      statement.defines.forEach(name => {
+        // 收集到当前模块的 definitions 语句
+        this.definitions[name] = statement;
+      })
     });
+  }
+
+  async expandAllStatements(): Promise<Statement[]> {
+    return Promise.all(
+      this.statements.map(async (statement: Statement): Promise<Statement[]> => {
+        // skip import
+        if (statement.isImportDeclaration) {
+          return [];
+        }
+        if (statement.node.type === 'VariableDeclaration') {
+          return [];
+        }
+        return statement.expand();
+      })
+    ).then(statements => {
+       return statements.flat()
+    })
+  }
+
+  async fetchDependencies(names: string[]): Promise<Statement[]> {
+    if (!names || !names.length) {
+      return [];
+    }
+    return Promise.all(
+      names.map(name => {
+        if (!this.definitions[name] && this.imports[name]) {
+          const source = this.imports[name].source!;
+          return this.bundle.fetchModule(source, this.path).then(module => {
+            if (name === 'log') {
+              debugger;
+            }
+            if (name === 'add') {
+              debugger;
+            }
+            
+            const statement = module.exports[name].statement!;
+            return statement.expand()
+          })
+        } else if (this.definitions[name]) {
+          // 当前模块定义
+          return this.definitions[name].expand()
+        } else {
+          throw new Error('Duplicated name defination!')
+        }
+      })
+    ).then(statements => statements.flat())
   }
 }

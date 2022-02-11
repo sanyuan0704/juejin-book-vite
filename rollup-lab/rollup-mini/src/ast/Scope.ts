@@ -19,10 +19,10 @@ export default class Scope {
 
   add(name: string, isBlockDeclaration: boolean = false) {
     // e.g var、function
-    if (!isBlockDeclaration && this.isBlockScope) {
-      this.parent && this.parent.add(name, isBlockDeclaration);
+    if (!isBlockDeclaration && this.isBlockScope && this.parent) {
+      this.parent.add(name, isBlockDeclaration);
     } else {
-      this.names?.push(name);
+      this.names.push(name);
     }
   }
 

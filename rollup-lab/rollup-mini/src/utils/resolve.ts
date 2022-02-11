@@ -9,8 +9,8 @@ export function defaultResolver(id: string, importer: string | null) {
   if (isAbsolute(id)) return id;
 
   // external modules stay external
-  if (id.startsWith('.')) return false;
+  if (!id.startsWith('.')) return false;
 
-  const resolvedPath = resolve(dirname(id), importer ?? '');
-  return removeExtension(resolvedPath);
+  const resolvedPath = importer ? resolve(dirname(importer), id) : resolve(id);
+  return resolvedPath;
 }

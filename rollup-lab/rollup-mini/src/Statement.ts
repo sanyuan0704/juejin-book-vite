@@ -1,7 +1,7 @@
 import MagicString from 'magic-string';
 import type Module from './Module';
 import Scope from './ast/Scope';
-import { walk } from './ast/walk';
+import { walk } from './utils/walk';
 
 interface Declaration {
   id: {
@@ -22,7 +22,7 @@ export class Statement {
   scope: Scope;
   isImportDeclaration: boolean;
   isExportDeclaration: boolean;
-  isInclude: boolean = false;
+  isIncluded: boolean = false;
   defines: Set<string> = new Set();
   modifies: Set<string> = new Set();
   dependsOn: Set<string> = new Set();
@@ -36,7 +36,9 @@ export class Statement {
   }
 
   analyse() {
+    if (this.isImportDeclaration) return;
     const ms = this.magicString;
+    let scope = this.scope;
     // 1. 构建作用域链
     walk(this.node, {
       enter: (node: any) => {
@@ -46,8 +48,8 @@ export class Statement {
           isBlock: boolean = false
         ) => {
           const name = declarator.id.name;
-          this.scope.add(name, isBlock);
-          if (!this.scope.parent) {
+          scope.add(name, isBlock);
+          if (!scope.parent) {
             this.defines.add(name);
           }
         };
@@ -61,19 +63,20 @@ export class Statement {
               addToScope(node);
             }
             newScope = new Scope({
-              parent: this.scope,
-              block: false
+              parent: scope,
+              block: false,
+              names: node.params.map((item: { name: string }) => item.name)
             });
             break;
           case 'BlockStatement':
             newScope = new Scope({
-              parent: this.scope,
+              parent: scope,
               block: true
             });
             break;
           case 'VariableDeclaration':
             (node as VariableDeclaration).declarations.forEach((item) => {
-              if (item.kind === 'let' || item.kind === 'const') {
+              if (node.kind === 'let' || node.kind === 'const') {
                 addToScope(item, true);
               } else {
                 addToScope(item, false);
@@ -82,14 +85,56 @@ export class Statement {
         }
         if (newScope) {
           Object.defineProperty(node, '_scope', { value: newScope });
-          this.scope = newScope;
+          scope = newScope;
         }
       },
       leave: (node: any) => {
-        if (node._scope) {
-          this.scope = node._scope;
+        // 当前 scope 即 node._scope，离开时 scope 需要向上回溯
+        if (node._scope && scope.parent) {
+          scope = scope.parent;
         }
       }
     });
+    // 2. 记录外部依赖
+    walk(this.node, {
+      enter: (node: any) => {
+        if (node._scope) {
+          scope = node._scope;
+        }
+        this.checkForReads(scope, node);
+      },
+      leave(node: any) {
+        // 当前 scope 即 node._scope，离开时 scope 需要向上回溯
+        if (node._scope && scope.parent) {
+          scope = scope.parent;
+        }
+      }
+    }) 
+  }
+
+  checkForReads(scope: Scope, node: any) {
+    if (node.type === 'Identifier') {
+      const inCurrentScope = scope.contains(node.name);
+      if (!this.defines.has(node.name) && !inCurrentScope) {
+        this.dependsOn.add(node.name);
+      }
+    }
+  }
+
+  async expand(): Promise<Statement[]> {
+    // Statement 已经包含到 bundle 中，不考虑
+    if (this.isIncluded) {
+      return [];
+    }
+    this.isIncluded = true;
+    const statements: Statement[] = [];
+    const dependencies = Array.from(this.dependsOn);
+    const depStatements = await this.module.fetchDependencies(dependencies);
+    // 先加依赖，再加自身
+    statements.push(
+      ...depStatements,
+      this
+    )
+    return statements;
   }
 }
