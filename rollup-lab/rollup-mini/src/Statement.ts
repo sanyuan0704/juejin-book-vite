@@ -129,6 +129,7 @@ export class Statement {
     this.isIncluded = true;
     const statements: Statement[] = [];
     const dependencies = Array.from(this.dependsOn);
+
     const depStatements = await this.module.fetchDependencies(dependencies);
     // 先加依赖，再加自身
     statements.push(

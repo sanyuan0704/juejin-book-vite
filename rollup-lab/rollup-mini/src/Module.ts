@@ -71,7 +71,6 @@ export default class Module {
   analyseAST() {
     this.collectImportAndExportsInfo();
     this.analyse();
-
   }
   addImports(statement: Statement) {
     const node = statement.node as any;
@@ -159,48 +158,44 @@ export default class Module {
   }
 
   async expandAllStatements(): Promise<Statement[]> {
-    return Promise.all(
-      this.statements.map(async (statement: Statement): Promise<Statement[]> => {
-        // skip import
-        if (statement.isImportDeclaration) {
-          return [];
-        }
-        if (statement.node.type === 'VariableDeclaration') {
-          return [];
-        }
-        return statement.expand();
-      })
-    ).then(statements => {
-       return statements.flat()
-    })
+    const statements = [];
+    for (const statement of this.statements) {
+      // skip import
+      if (statement.isImportDeclaration) {
+        continue;
+      }
+      if (statement.node.type === 'VariableDeclaration') {
+        continue;
+      }
+      const statementWithDeps = await statement.expand()
+      statements.push(...statementWithDeps);
+    }
+    return statements;
   }
 
   async fetchDependencies(names: string[]): Promise<Statement[]> {
     if (!names || !names.length) {
       return [];
     }
-    return Promise.all(
-      names.map(name => {
-        if (!this.definitions[name] && this.imports[name]) {
-          const source = this.imports[name].source!;
-          return this.bundle.fetchModule(source, this.path).then(module => {
-            if (name === 'log') {
-              debugger;
-            }
-            if (name === 'add') {
-              debugger;
-            }
-            
-            const statement = module.exports[name].statement!;
-            return statement.expand()
-          })
-        } else if (this.definitions[name]) {
-          // 当前模块定义
-          return this.definitions[name].expand()
-        } else {
-          throw new Error('Duplicated name defination!')
-        }
-      })
-    ).then(statements => statements.flat())
+    const statements = [];
+    for (const name of names) {
+      // 如果是外部依赖
+      if (!this.definitions[name] && this.imports[name]) {
+        const source = this.imports[name].source!;
+        const module = await this.bundle.fetchModule(source, this.path)
+        const statement = module.exports[name].statement!;
+        const statementWithDeps = await statement.expand();
+        statements.push(...statementWithDeps);
+      }
+      else if (this.definitions[name]) {
+        // 当前模块定义
+        const statementWithDeps = await this.definitions[name].expand();
+        statements.push(...statementWithDeps);
+      }
+      else {
+        throw new Error('Duplicated name defination!')
+      }
+    }
+    return statements;
   }
 }
