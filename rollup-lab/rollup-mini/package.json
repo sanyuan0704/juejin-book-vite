@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsc -w",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -12,8 +13,7 @@
   "dependencies": {
     "acorn": "^8.7.0",
     "estree-walk": "^2.2.0",
-    "magic-string": "^0.25.7",
-    "rollup": "0.20.0"
+    "magic-string": "^0.25.7"
   },
   "devDependencies": {
     "@types/acorn": "^4.0.6",

@@ -1,42 +1,64 @@
+import { Statement } from '../Statement';
+import { Declaration } from './Declaration';
+import { keys } from '../utils/obejct';
+
 interface ScopeOptions {
   parent?: Scope;
-  names?: string[];
+  paramNodes?: any[];
   block?: boolean;
+  statement: Statement;
+  isTopLevel?: boolean;
 }
 
-export default class Scope {
+export class Scope {
   parent?: Scope;
-  depth: number;
-  names: string[];
+  paramNodes: any[];
   isBlockScope?: boolean;
-  constructor(options: ScopeOptions = {}) {
-    const { parent, names, block } = options;
+  statement: Statement;
+  declarations: Record<string, Declaration> = {};
+  constructor(options: ScopeOptions) {
+    const { parent, paramNodes, block, statement } = options;
     this.parent = parent;
-    this.depth = parent ? parent.depth + 1 : 0;
-    this.names = names || [];
+    this.paramNodes = paramNodes || [];
+    this.statement = statement;
     this.isBlockScope = !!block;
+    this.paramNodes.forEach(
+      (node) =>
+        (this.declarations[node.name] = new Declaration(
+          node,
+          true,
+          this.statement
+        ))
+    );
   }
 
-  add(name: string, isBlockDeclaration: boolean = false) {
-    // e.g var、function
-    if (!isBlockDeclaration && this.isBlockScope && this.parent) {
-      this.parent.add(name, isBlockDeclaration);
+  addDeclaration(node: any, isBlockDeclaration: boolean) {
+    // block scope & var, 向上追溯，直到顶层作用域
+    if (this.isBlockScope && !isBlockDeclaration && this.parent) {
+      this.parent.addDeclaration(node, isBlockDeclaration);
     } else {
-      this.names.push(name);
+      this.declarations[node.id.name] = new Declaration(
+        node,
+        false,
+        this.statement
+      );
     }
   }
 
-  contains(name: string): boolean {
-    return this.findDefiningScope(name);
+  eachDeclaration(fn: (name: string, dec: Declaration) => void) {
+    keys(this.declarations).forEach((key) => {
+      fn(key, this.declarations[key]);
+    });
   }
 
-  findDefiningScope(name: string): boolean {
-    if (this.names.includes(name)) {
-      return true;
-    }
-    if (this.parent && this.parent.findDefiningScope(name)) {
-      return true;
-    }
-    return false;
+  contains(name: string): Declaration {
+    return this.findDeclaration(name);
+  }
+
+  findDeclaration(name: string): Declaration {
+    return (
+      this.declarations[name] ||
+      (this.parent && this.parent.findDeclaration(name))
+    );
   }
 }

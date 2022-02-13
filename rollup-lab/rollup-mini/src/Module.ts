@@ -1,11 +1,16 @@
-import type Bundle from './Bundle';
+import type { Bundle } from './Bundle';
 import MagicString from 'magic-string';
 import { parse, Node } from 'acorn';
 import { Statement } from './Statement';
+import { ModuleLoader } from './ModuleLoader';
+import { Declaration } from './ast/Declaration';
+import { keys } from './utils/obejct';
+import { debug } from 'console';
 
 export interface ModuleOptions {
   path: string;
   bundle: Bundle;
+  loader: ModuleLoader;
   source: string;
 }
 
@@ -15,6 +20,7 @@ interface ImportOrExportInfo {
   name: string;
   statement?: Statement;
   isDeclaration?: boolean;
+  module?: Module;
 }
 
 interface Specifier {
@@ -33,23 +39,34 @@ interface Specifier {
 type Imports = Record<string, ImportOrExportInfo>;
 type Exports = Record<string, ImportOrExportInfo>;
 
-export default class Module {
+export class Module {
+  id: string;
   path: string;
   bundle: Bundle;
+  moduleLoader: ModuleLoader;
   source: string;
   magicString: MagicString;
   statements: Statement[];
   imports: Imports;
   exports: Exports;
-  definitions: Record<string, Statement>;
-  constructor({ path, bundle, source }: ModuleOptions) {
+  reexports: Exports;
+  exportAllSources: string[] = [];
+  exportAllModules: Module[] = [];
+  declarations: Record<string, Declaration>;
+  dependencies: string[] = [];
+  dependencyModules: Module[] = [];
+  referencedModules: Module[] = [];
+  constructor({ path, bundle, source, loader }: ModuleOptions) {
+    this.id = path;
     this.bundle = bundle;
+    this.moduleLoader = loader;
     this.path = path;
     this.source = source;
     this.magicString = new MagicString(source);
     this.imports = {};
     this.exports = {};
-    this.definitions = {};
+    this.reexports = {};
+    this.declarations = {};
     try {
       const ast = parse(source, {
         ecmaVersion: 6,
@@ -69,9 +86,29 @@ export default class Module {
   }
 
   analyseAST() {
-    this.collectImportAndExportsInfo();
-    this.analyse();
+    this.statements.forEach((statement) => {
+      statement.analyse();
+      if (statement.isImportDeclaration) {
+        this.addImports(statement);
+      } else if (statement.isExportDeclaration) {
+        this.addExports(statement);
+      }
+      // 注册顶层声明
+      if (!statement.scope.parent) {
+        statement.scope.eachDeclaration((name, declaration) => {
+          this.declarations[name] = declaration;
+        });
+      }
+    });
+    // console.log('module:', this.path, this.declarations);
   }
+
+  addDependencies(source: string) {
+    if (!this.dependencies.includes(source)) {
+      this.dependencies.push(source);
+    }
+  }
+
   addImports(statement: Statement) {
     const node = statement.node as any;
     const source = node.source.value;
@@ -82,25 +119,14 @@ export default class Module {
       const name = isDefault ? 'default' : specifier.imported.name;
       this.imports[localName] = { source, name, localName };
     });
+    this.addDependencies(source);
   }
 
   addExports(statement: Statement) {
     const node = statement.node as any;
     const source = node.source && node.source.value;
-    // export
-    // export defualt function foo(){}
-    // export default foo;
-    // export default 11;
-
-    const isDefaultExport = node.type === 'ExportDefaultDeclaration';
-    const isNamedExport = node.type === 'ExportNamedDeclaration';
-    // if (isDefault) {
-    //   this.exports['default'] = {
-    //     statement,
-    //     localName
-    //   };
-    // }
-    if (isNamedExport) {
+    if (node.type === 'ExportNamedDeclaration') {
+      // export { a, b } from 'mod'
       if (node.specifiers.length) {
         node.specifiers.forEach((specifier: Specifier) => {
           const localName = specifier.local.name;
@@ -110,11 +136,19 @@ export default class Module {
             name: exportedName
           };
           if (source) {
+            this.reexports[localName] = {
+              statement,
+              source,
+              localName,
+              name: localName,
+              module: undefined
+            };
             this.imports[localName] = {
               source,
               localName,
               name: localName
             };
+            this.addDependencies(source);
           }
         });
       } else {
@@ -133,69 +167,184 @@ export default class Module {
           name
         };
       }
-    } 
+    } else if (node.type === 'ExportDefaultDeclaration') {
+      const identifier =
+        // export default foo;
+        (node.declaration.id && node.declaration.id.name) ||
+        // export defualt function foo(){}
+        node.declaration.name;
+
+      this.exports['default'] = {
+        statement,
+        localName: identifier,
+        name: 'default'
+      };
+    } else if (node.type === 'ExportAllDeclaration') {
+      // export * from 'mod'
+      if (source) {
+        this.exportAllSources.push(source);
+        this.addDependencies(source);
+      }
+    }
   }
 
-  collectImportAndExportsInfo() {
-    // 收集 imports 和 exports
-    this.statements.forEach((statement) => {
-      if (statement.isImportDeclaration) {
-        this.addImports(statement);
-      } else if (statement.isExportDeclaration) {
-        this.addExports(statement);
+  bind() {
+    this.bindImportSpecifiers();
+    this.bindReferences();
+  }
+
+  bindImportSpecifiers() {
+    [...Object.values(this.imports), ...Object.values(this.reexports)].forEach(
+      (specifier) => {
+        specifier.module = this._getModuleBySource(specifier.source!);
       }
+    );
+    this.exportAllModules = this.exportAllSources.map(
+      this._getModuleBySource.bind(this)
+    );
+    // 建立模块依赖图
+    this.dependencyModules = this.dependencies.map(
+      this._getModuleBySource.bind(this)
+    );
+    this.dependencyModules.forEach((module) => {
+      module.referencedModules.push(this);
     });
   }
 
-  analyse() {
+  bindReferences() {
     this.statements.forEach((statement) => {
-      statement.analyse();
-      statement.defines.forEach(name => {
-        // 收集到当前模块的 definitions 语句
-        this.definitions[name] = statement;
-      })
+      statement.references.forEach((reference) => {
+        // 根据引用寻找声明的位置
+        // 寻找顺序: 1. statement 2. 当前模块 3. 依赖模块
+        const declaration =
+          reference.scope.findDeclaration(reference.name) ||
+          this.trace(reference.name);
+        if (declaration) {
+          reference.declaration = declaration;
+        }
+      });
     });
   }
 
-  async expandAllStatements(): Promise<Statement[]> {
-    const statements = [];
-    for (const statement of this.statements) {
-      // skip import
-      if (statement.isImportDeclaration) {
-        continue;
-      }
-      if (statement.node.type === 'VariableDeclaration') {
-        continue;
-      }
-      const statementWithDeps = await statement.expand()
-      statements.push(...statementWithDeps);
+  trace(name: string) {
+    if (this.declarations[name]) {
+      // 从当前模块找
+      return this.declarations[name];
     }
-    return statements;
+    if (this.imports[name]) {
+      const importSpecifier = this.imports[name];
+      const importModule = importSpecifier.module!;
+      // 从依赖模块找
+      const declaration = importModule.traceExport(importSpecifier.name);
+      if (declaration) {
+        return declaration;
+      }
+    }
+    return null;
   }
 
-  async fetchDependencies(names: string[]): Promise<Statement[]> {
-    if (!names || !names.length) {
-      return [];
+  traceExport(name: string): Declaration | null {
+    // 1. reexport
+    // export { foo as bar } from './mod'
+    const reexportDeclaration = this.reexports[name];
+    if (reexportDeclaration) {
+      // 说明是从其它模块 reexport 出来的
+      // 经过 bindImportSpecifier 方法处理，现已绑定 module
+      const declaration = reexportDeclaration.module!.traceExport(
+        reexportDeclaration.localName
+      );
+      if (!declaration) {
+        throw new Error(
+          `${reexportDeclaration.localName} is not exported by module ${
+            reexportDeclaration.module!.path
+          }(imported by ${this.path})`
+        );
+      }
+      return declaration;
     }
-    const statements = [];
-    for (const name of names) {
-      // 如果是外部依赖
-      if (!this.definitions[name] && this.imports[name]) {
-        const source = this.imports[name].source!;
-        const module = await this.bundle.fetchModule(source, this.path)
-        const statement = module.exports[name].statement!;
-        const statementWithDeps = await statement.expand();
-        statements.push(...statementWithDeps);
-      }
-      else if (this.definitions[name]) {
-        // 当前模块定义
-        const statementWithDeps = await this.definitions[name].expand();
-        statements.push(...statementWithDeps);
-      }
-      else {
-        throw new Error('Duplicated name defination!')
+    // 2. export
+    // export { foo }
+    const exportDeclaration = this.exports[name];
+    if (exportDeclaration) {
+      const declaration = this.trace(name);
+      if (declaration) {
+        return declaration;
       }
     }
-    return statements;
+    // 3. export all
+    for (let exportAllModule of this.exportAllModules) {
+      const declaration = exportAllModule.trace(name);
+      if (declaration) {
+        return declaration;
+      }
+    }
+    return null;
+  }
+
+  render() {
+    const source = this.magicString.clone().trim();
+    this.statements.forEach((statement) => {
+      if (!statement.isIncluded) {
+        source.remove(statement.node.start, statement.node.end);
+        return;
+      }
+      if (statement.isExportDeclaration) {
+        // export { foo, bar }
+        if (statement.node.type === 'ExportNamedDeclaration') {
+          if (statement.node.specifiers.length) {
+            source.remove(statement.node.start, statement.node.end);
+          }
+        }
+        // remove `export` from `export const foo = 42`
+        if (
+          statement.node.type === 'ExportNamedDeclaration' &&
+          statement.node.declaration.type === 'VariableDeclaration'
+        ) {
+          source.remove(statement.node.start, statement.node.declaration.start);
+        }
+
+        if (statement.node.type === 'ExportDefaultDeclaration') {
+          // export default functon foo() {};
+          if (!statement.node.declaration.id) {
+            const defaultName = statement.module.path + '__defualt';
+            // export default () = {}
+            // export default function () {}
+            source.overwrite(
+              statement.node.start,
+              statement.node.declaration.start + 8,
+              `var ${defaultName} = `
+            );
+          } else {
+            // export default function a() {}
+            const defaultName =
+              statement.node.declaration.id.name + '__defualt';
+
+            source.overwrite(
+              statement.node.start,
+              statement.node.declaration.start + 8,
+              `var ${defaultName} = `
+            );
+          }
+        }
+      }
+    });
+    return source;
+  }
+
+  getExports(): string[] {
+    return [
+      ...keys(this.exports),
+      ...keys(this.reexports),
+      ...this.exportAllModules
+        .map((module) =>
+          module.getExports().filter((name: string) => name !== 'default')
+        )
+        .flat()
+    ];
+  }
+
+  private _getModuleBySource(source: string) {
+    const id = this.moduleLoader.resolveId(source!, this.path) as string;
+    return this.bundle.getModuleById(id);
   }
 }

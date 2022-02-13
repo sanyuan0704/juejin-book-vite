@@ -8,13 +8,12 @@
 
 const { rollup } = require('./dist/rollup');
 
-
 async function build() {
   const bundle = await rollup({
     input: './test/index.js'
   });
-  const { code } = bundle.generate();
-  console.log(code);
+  const res = bundle.generate();
+  console.log(res);
 }
 
 build();

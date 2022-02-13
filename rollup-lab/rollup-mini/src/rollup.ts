@@ -1,6 +1,6 @@
 import { basename } from 'path';
 import { writeFile } from 'fs';
-import Bundle from './Bundle';
+import { Bundle } from './Bundle';
 
 export interface RollupOptions {
   input: string;

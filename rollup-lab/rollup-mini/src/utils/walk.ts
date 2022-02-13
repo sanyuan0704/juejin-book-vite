@@ -1,7 +1,7 @@
 let shouldSkip;
 let shouldAbort: boolean;
 
-export function walk(ast: any, { enter, leave }: { enter: any, leave: any }) {
+export function walk(ast: any, { enter, leave }: { enter: any; leave: any }) {
   shouldAbort = false;
   visit(ast, null, enter, leave);
 }
@@ -19,12 +19,12 @@ function isArray(thing: Object) {
   return toString.call(thing) === '[object Array]';
 }
 
-function visit(node: any, parent: any, enter: any, leave: any) {
+function visit(node: any, parent: any, enter: any, leave: any, prop?: string) {
   if (!node || shouldAbort) return;
 
   if (enter) {
     shouldSkip = false;
-    enter.call(context, node, parent);
+    enter.call(context, node, parent, prop);
     if (shouldSkip || shouldAbort) return;
   }
 
@@ -42,14 +42,14 @@ function visit(node: any, parent: any, enter: any, leave: any) {
 
     if (isArray(value)) {
       for (let j = 0; j < value.length; j++) {
-        visit(value[j], node, enter, leave);
+        visit(value[j], node, enter, leave, key);
       }
     } else if (value && value.type) {
-      visit(value, node, enter, leave);
+      visit(value, node, enter, leave, key);
     }
   }
 
   if (leave && !shouldAbort) {
-    leave(node, parent);
+    leave(node, parent, prop);
   }
 }
