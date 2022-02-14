@@ -11,7 +11,7 @@ export interface ModuleOptions {
   path: string;
   bundle: Bundle;
   loader: ModuleLoader;
-  source: string;
+  code: string;
 }
 
 interface ImportOrExportInfo {
@@ -44,7 +44,7 @@ export class Module {
   path: string;
   bundle: Bundle;
   moduleLoader: ModuleLoader;
-  source: string;
+  code: string;
   magicString: MagicString;
   statements: Statement[];
   imports: Imports;
@@ -56,19 +56,19 @@ export class Module {
   dependencies: string[] = [];
   dependencyModules: Module[] = [];
   referencedModules: Module[] = [];
-  constructor({ path, bundle, source, loader }: ModuleOptions) {
+  constructor({ path, bundle, code, loader }: ModuleOptions) {
     this.id = path;
     this.bundle = bundle;
     this.moduleLoader = loader;
     this.path = path;
-    this.source = source;
-    this.magicString = new MagicString(source);
+    this.code = code;
+    this.magicString = new MagicString(code);
     this.imports = {};
     this.exports = {};
     this.reexports = {};
     this.declarations = {};
     try {
-      const ast = parse(source, {
+      const ast = parse(code, {
         ecmaVersion: 6,
         sourceType: 'module'
       }) as any;
@@ -100,6 +100,12 @@ export class Module {
         });
       }
     });
+    const statements = this.statements;
+    let next = this.code.length;
+    for (let i = statements.length - 1; i >= 0; i--) {
+      statements[i].next = next;
+      next = statements[i].start;
+    }
     // console.log('module:', this.path, this.declarations);
   }
 
@@ -285,7 +291,7 @@ export class Module {
     const source = this.magicString.clone().trim();
     this.statements.forEach((statement) => {
       if (!statement.isIncluded) {
-        source.remove(statement.node.start, statement.node.end);
+        source.remove(statement.start, statement.next);
         return;
       }
       if (statement.isExportDeclaration) {

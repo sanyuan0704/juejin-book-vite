@@ -24,6 +24,8 @@ export class Statement {
   magicString: MagicString;
   module: Module;
   scope: Scope;
+  start: number;
+  next: number;
   isImportDeclaration: boolean;
   isExportDeclaration: boolean;
   isReexportDeclaration: boolean;
@@ -40,6 +42,8 @@ export class Statement {
     this.scope = new Scope({
       statement: this
     });
+    this.start = node.start;
+    this.next = 0;
     this.isImportDeclaration = isImportDeclaration(node);
     this.isExportDeclaration = isExportDeclaration(node);
     this.isReexportDeclaration = this.isExportDeclaration && !!node.source;

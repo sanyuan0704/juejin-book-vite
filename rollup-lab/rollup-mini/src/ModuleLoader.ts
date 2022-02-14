@@ -37,11 +37,11 @@ export class ModuleLoader {
     if (existModule) {
       return existModule;
     }
-    const source = await readFile(path, { encoding: 'utf-8' });
+    const code = await readFile(path, { encoding: 'utf-8' });
     // 初始化模块，解析 AST
     const module = new Module({
       path,
-      source,
+      code,
       bundle,
       loader
     });
