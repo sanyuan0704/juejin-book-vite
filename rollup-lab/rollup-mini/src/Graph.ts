@@ -37,13 +37,13 @@ export class Graph {
     );
     // 2. 构建依赖关系图
     this.modules.forEach((module) => module.bind());
-    // 3. 标记需要包含的语句
+    // 3. 模块拓扑排序
+    this.orderedModules = this.sortModules(entryModule!);
+    // 4. 标记需要包含的语句
     entryModule!.getExports().forEach((name) => {
       const declaration = entryModule!.traceExport(name);
       declaration!.use();
     });
-    // 4. 模块拓扑排序
-    this.orderedModules = this.sortModules(entryModule!);
     // 5. 处理命名冲突
     this.doconflict();
   }
@@ -54,10 +54,8 @@ export class Graph {
     function getSafeName(name: string) {
       let safeName = name;
       let count = 1;
-      if (used[safeName]) {
-        while (!used[safeName]) {
-          name += `${name}$${count++}`;
-        }
+      while (used[safeName]) {
+        safeName = `${name}$${count++}`;
       }
       used[safeName] = true;
       return safeName;

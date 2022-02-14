@@ -7,8 +7,8 @@ export class Declaration {
   statement: Statement;
   name: string | null = null;
   isParam: boolean = false;
-  alias: Declaration[] = [];
   isUsed: boolean = false;
+  isReassigned: boolean = false;
   constructor(node: any, isParam: boolean, statement: Statement) {
     if (node) {
       if (node.type === 'FunctionDeclaration') {
@@ -27,10 +27,6 @@ export class Declaration {
     this.isParam = isParam;
   }
 
-  addAlias(declaration: Declaration) {
-    this.alias.push(declaration);
-  }
-
   addReference(reference: Reference) {
     reference.declaration = this;
     this.name = reference.name;
@@ -41,5 +37,28 @@ export class Declaration {
     if (this.statement) {
       this.statement.mark();
     }
+  }
+
+  render() {
+    return this.name;
+  }
+}
+
+export class SyntheticDefaultDeclaration extends Declaration {
+  original: Declaration | null;
+  exportName: string | null;
+  constructor(node: any, name: string, statement: Statement) {
+    super(node, false, statement);
+    this.original = null;
+    this.exportName = '';
+    this.name = name;
+  }
+
+  render() {
+    return this.original?.render() || this.name;
+  }
+
+  bind(declaration: Declaration) {
+    this.original = declaration;
   }
 }

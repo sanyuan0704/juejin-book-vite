@@ -3,7 +3,7 @@ import MagicString from 'magic-string';
 import { parse, Node } from 'acorn';
 import { Statement } from './Statement';
 import { ModuleLoader } from './ModuleLoader';
-import { Declaration } from './ast/Declaration';
+import { Declaration, SyntheticDefaultDeclaration } from './ast/Declaration';
 import { keys } from './utils/obejct';
 import { debug } from 'console';
 
@@ -185,6 +185,11 @@ export class Module {
         localName: identifier,
         name: 'default'
       };
+      this.declarations['default'] = new SyntheticDefaultDeclaration(
+        node,
+        identifier,
+        statement
+      );
     } else if (node.type === 'ExportAllDeclaration') {
       // export * from 'mod'
       if (source) {
@@ -218,6 +223,15 @@ export class Module {
   }
 
   bindReferences() {
+    // 处理 default 导出
+    if (this.declarations['default'] && this.exports['default'].localName) {
+      const declaration = this.trace(this.exports['default'].localName);
+      if (declaration) {
+        (this.declarations['default'] as SyntheticDefaultDeclaration).bind(
+          declaration
+        );
+      }
+    }
     this.statements.forEach((statement) => {
       statement.references.forEach((reference) => {
         // 根据引用寻找声明的位置
@@ -226,7 +240,7 @@ export class Module {
           reference.scope.findDeclaration(reference.name) ||
           this.trace(reference.name);
         if (declaration) {
-          reference.declaration = declaration;
+          declaration.addReference(reference);
         }
       });
     });
@@ -294,41 +308,61 @@ export class Module {
         source.remove(statement.start, statement.next);
         return;
       }
+      // TODO 1. renamed reference in the same scope
+      //      2. shorthand
+      statement.references.forEach((reference) => {
+        const { start, end } = reference;
+        const declaration = reference.declaration;
+        if (declaration) {
+          const name = declaration.render();
+          source.overwrite(start, end, name!);
+        }
+      });
       if (statement.isExportDeclaration) {
         // export { foo, bar }
-        if (statement.node.type === 'ExportNamedDeclaration') {
-          if (statement.node.specifiers.length) {
-            source.remove(statement.node.start, statement.node.end);
-          }
+        if (
+          statement.node.type === 'ExportNamedDeclaration' &&
+          statement.node.specifiers.length
+        ) {
+          source.remove(statement.start, statement.next);
         }
         // remove `export` from `export const foo = 42`
-        if (
+        else if (
           statement.node.type === 'ExportNamedDeclaration' &&
           statement.node.declaration.type === 'VariableDeclaration'
         ) {
           source.remove(statement.node.start, statement.node.declaration.start);
         }
+        // remove `export * from './mod'`
+        else if (statement.node.type === 'ExportAllDeclaration') {
+          source.remove(statement.start, statement.next);
+        }
+        // export default
+        else if (statement.node.type === 'ExportDefaultDeclaration') {
+          const defaultDeclaration = this.declarations['default'];
+          const defaultName = defaultDeclaration.render();
 
-        if (statement.node.type === 'ExportDefaultDeclaration') {
-          // export default functon foo() {};
-          if (!statement.node.declaration.id) {
-            const defaultName = statement.module.path + '__defualt';
-            // export default () = {}
-            // export default function () {}
+          // export default function() {}  -> function a() {}
+          if (statement.node.declaration.type === 'FunctionExpression') {
             source.overwrite(
               statement.node.start,
               statement.node.declaration.start + 8,
-              `var ${defaultName} = `
+              `function ${defaultName}`
+            );
+          } else if (statement.node.declaration.id) {
+            // export default function foo() {} -> const a = funciton foo() {}
+            source.overwrite(
+              statement.node.start,
+              statement.node.declaration.start,
+              `const ${defaultName} = `
             );
           } else {
-            // export default function a() {}
-            const defaultName =
-              statement.node.declaration.id.name + '__defualt';
-
+            // export default () => {}
+            // export default Foo;
             source.overwrite(
               statement.node.start,
-              statement.node.declaration.start + 8,
-              `var ${defaultName} = `
+              statement.node.declaration.start,
+              `const ${defaultName} = `
             );
           }
         }

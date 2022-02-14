@@ -1,6 +1,9 @@
-import { add } from './dep1.js';
+import afunc from './dep1.js';
+
+const a = 1;
+export const c = a + 2;
 
 export const log = () => {
-  add(1, 2);
+  afunc(1, 2);
   console.log(123);
 };

@@ -1,7 +1,7 @@
-import { add } from './dep1.js';
-import { log } from './dep2.js';
+import { add, b } from './dep1.js';
+import { log, c } from './dep2.js';
 
-export const c = log(1, 2);
+export const cc = log(b, c);
 // const a = 1;
 // const b = 2;
 // console.log(a + b);
