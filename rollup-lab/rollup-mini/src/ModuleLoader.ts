@@ -24,6 +24,7 @@ export class ModuleLoader {
   async fetchModule(
     id: string,
     importer: null | string,
+    isEntry = false,
     bundle: Bundle = this.bundle,
     loader: ModuleLoader = this
   ): Promise<Module | null> {
@@ -43,7 +44,8 @@ export class ModuleLoader {
       path,
       code,
       bundle,
-      loader
+      loader,
+      isEntry
     });
     this.bundle.addModule(module);
     // 拉取所有的依赖模块

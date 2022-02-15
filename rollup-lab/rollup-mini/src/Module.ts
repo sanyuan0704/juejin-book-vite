@@ -3,7 +3,11 @@ import MagicString from 'magic-string';
 import { parse, Node } from 'acorn';
 import { Statement } from './Statement';
 import { ModuleLoader } from './ModuleLoader';
-import { Declaration, SyntheticDefaultDeclaration } from './ast/Declaration';
+import {
+  Declaration,
+  SyntheticDefaultDeclaration,
+  SyntheticNamespaceDeclaration
+} from './ast/Declaration';
 import { keys } from './utils/obejct';
 import { debug } from 'console';
 
@@ -12,6 +16,7 @@ export interface ModuleOptions {
   bundle: Bundle;
   loader: ModuleLoader;
   code: string;
+  isEntry: boolean;
 }
 
 interface ImportOrExportInfo {
@@ -40,6 +45,7 @@ type Imports = Record<string, ImportOrExportInfo>;
 type Exports = Record<string, ImportOrExportInfo>;
 
 export class Module {
+  isEntry: boolean = false;
   id: string;
   path: string;
   bundle: Bundle;
@@ -56,10 +62,11 @@ export class Module {
   dependencies: string[] = [];
   dependencyModules: Module[] = [];
   referencedModules: Module[] = [];
-  constructor({ path, bundle, code, loader }: ModuleOptions) {
+  constructor({ path, bundle, code, loader, isEntry = false }: ModuleOptions) {
     this.id = path;
     this.bundle = bundle;
     this.moduleLoader = loader;
+    this.isEntry = isEntry;
     this.path = path;
     this.code = code;
     this.magicString = new MagicString(code);
@@ -121,8 +128,13 @@ export class Module {
     // import
     node.specifiers.forEach((specifier: Specifier) => {
       const isDefault = specifier.type === 'ImportDefaultSpecifier';
+      const isNamespace = specifier.type === 'ImportNamespaceSpecifier';
       const localName = specifier.local.name;
-      const name = isDefault ? 'default' : specifier.imported.name;
+      const name = isDefault
+        ? 'default'
+        : isNamespace
+        ? '*'
+        : specifier.imported.name;
       this.imports[localName] = { source, name, localName };
     });
     this.addDependencies(source);
@@ -245,7 +257,12 @@ export class Module {
       });
     });
   }
-
+  getOrCreateNamespace() {
+    if (!this.declarations['*']) {
+      this.declarations['*'] = new SyntheticNamespaceDeclaration(this);
+    }
+    return this.declarations['*'];
+  }
   trace(name: string) {
     if (this.declarations[name]) {
       // 从当前模块找
@@ -254,6 +271,9 @@ export class Module {
     if (this.imports[name]) {
       const importSpecifier = this.imports[name];
       const importModule = importSpecifier.module!;
+      if (importSpecifier.name === '*') {
+        return importModule.getOrCreateNamespace();
+      }
       // 从依赖模块找
       const declaration = importModule.traceExport(importSpecifier.name);
       if (declaration) {
@@ -304,12 +324,12 @@ export class Module {
   render() {
     const source = this.magicString.clone().trim();
     this.statements.forEach((statement) => {
+      // 1. Tree Shaking
       if (!statement.isIncluded) {
         source.remove(statement.start, statement.next);
         return;
       }
-      // TODO 1. renamed reference in the same scope
-      //      2. shorthand
+      // 2. 重写引用位置的变量名 -> 对应的声明位置的变量名
       statement.references.forEach((reference) => {
         const { start, end } = reference;
         const declaration = reference.declaration;
@@ -318,7 +338,8 @@ export class Module {
           source.overwrite(start, end, name!);
         }
       });
-      if (statement.isExportDeclaration) {
+      // 3. 擦除/重写 export 相关的代码
+      if (statement.isExportDeclaration && !this.isEntry) {
         // export { foo, bar }
         if (
           statement.node.type === 'ExportNamedDeclaration' &&
@@ -329,7 +350,8 @@ export class Module {
         // remove `export` from `export const foo = 42`
         else if (
           statement.node.type === 'ExportNamedDeclaration' &&
-          statement.node.declaration.type === 'VariableDeclaration'
+          (statement.node.declaration.type === 'VariableDeclaration' ||
+            statement.node.declaration.type === 'FunctionDeclaration')
         ) {
           source.remove(statement.node.start, statement.node.declaration.start);
         }
@@ -368,7 +390,16 @@ export class Module {
         }
       }
     });
-    return source;
+    // 4. 单独处理 namespace 导出
+    if (this.declarations['*']) {
+      const namespaceDeclaration = this.declarations[
+        '*'
+      ] as SyntheticNamespaceDeclaration;
+      if (namespaceDeclaration.needsNamespaceBlock) {
+        source.append(`\n\n${namespaceDeclaration.renderBlock()}\n`);
+      }
+    }
+    return source.trim();
   }
 
   getExports(): string[] {

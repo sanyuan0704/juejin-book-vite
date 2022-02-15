@@ -2,8 +2,12 @@ import { Statement } from '../Statement';
 import { walk } from './walk';
 import { Reference } from '../ast/Reference';
 
-function isReference(node: any, parent: any) {
+function isReference(node: any, parent: any): boolean {
+  if (node.type === 'MemberExpression' && parent.type !== 'MemberExpression') {
+    return true;
+  }
   if (node.type === 'Identifier') {
+    // export { foo as bar }
     if (parent.type === 'ExportSpecifier' && node !== parent.local)
       return false;
     return true;

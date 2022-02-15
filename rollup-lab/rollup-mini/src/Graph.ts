@@ -33,7 +33,8 @@ export class Graph {
     // 1. 获取并解析模块信息
     const entryModule = await this.moduleLoader.fetchModule(
       this.entryPath,
-      null
+      null,
+      true
     );
     // 2. 构建依赖关系图
     this.modules.forEach((module) => module.bind());

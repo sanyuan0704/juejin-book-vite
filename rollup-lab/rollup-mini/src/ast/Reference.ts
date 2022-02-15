@@ -11,12 +11,20 @@ export class Reference {
   name: string;
   start: number;
   end: number;
+  objectPaths: any[] = [];
   constructor(node: any, scope: Scope, statement: Statement) {
     this.node = node;
     this.scope = scope;
     this.statement = statement;
-    this.name = node.name;
     this.start = node.start;
     this.end = node.end;
+    let root = node;
+    this.objectPaths = [];
+    while (root.type === 'MemberExpression') {
+      this.objectPaths.unshift(root.property);
+      root = root.object;
+    }
+    this.objectPaths.unshift(root);
+    this.name = root.name;
   }
 }

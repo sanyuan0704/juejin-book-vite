@@ -5,7 +5,7 @@
 //   sourceType: 'module'
 // });
 // console.log(res);
-
+const fs = require('fs');
 const { rollup } = require('./dist/rollup');
 
 async function build() {
@@ -13,7 +13,7 @@ async function build() {
     input: './test/index.js'
   });
   const res = bundle.generate();
-  console.log(res);
+  fs.writeFileSync('./test/bundle.js', res.code);
 }
 
 build();

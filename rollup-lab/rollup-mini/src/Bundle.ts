@@ -28,7 +28,7 @@ export class Bundle {
   }
 
   render(): { code: string; map: MagicString.SourceMap } {
-    let msBundle = new MagicString.Bundle({ separator: '' });
+    let msBundle = new MagicString.Bundle({ separator: '\n' });
 
     this.graph.orderedModules.forEach((module) => {
       msBundle.addSource({
