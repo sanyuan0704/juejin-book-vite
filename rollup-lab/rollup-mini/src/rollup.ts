@@ -11,7 +11,6 @@ export function rollup(options: RollupOptions) {
   const bundle = new Bundle({
     entry: options.input
   });
-
   return bundle.build().then(() => {
     return {
       generate: () => bundle.render()

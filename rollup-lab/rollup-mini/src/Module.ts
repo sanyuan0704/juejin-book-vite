@@ -9,7 +9,6 @@ import {
   SyntheticNamespaceDeclaration
 } from './ast/Declaration';
 import { keys } from './utils/obejct';
-import { debug } from 'console';
 
 export interface ModuleOptions {
   path: string;

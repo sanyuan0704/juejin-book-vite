@@ -11,13 +11,6 @@ import { buildScope } from './utils/buildScope';
 import { Reference } from './ast/Reference';
 import { findReference } from './utils/findReference';
 
-interface Declaration {
-  id: {
-    name: string;
-  };
-  kind: string;
-}
-
 export class Statement {
   // acorn type problem
   node: any;
