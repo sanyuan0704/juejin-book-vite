@@ -1,1 +1,0 @@
-assert.strictEqual( this, undefined );
