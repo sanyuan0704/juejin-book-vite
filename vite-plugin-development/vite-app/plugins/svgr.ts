@@ -33,10 +33,7 @@ export default function viteSvgrPlugin(options: SvgrOptions): Plugin {
       const result = await esbuild.transform(componentCode, {
         loader: 'jsx',
       });
-      return {
-        code: result.code,
-        map: null // TODO
-      };
+      return result.code;
     },
   };
 }
