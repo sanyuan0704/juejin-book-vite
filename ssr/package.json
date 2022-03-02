@@ -1,0 +1,28 @@
+{
+  "name": "vite-ssr-app",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "nodemon --watch src/ssr-server --exec 'esno src/ssr-server/index.ts'",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "vite build --outDir dist/client",
+    "build:server": "vite build --ssr src/entry-server.tsx --outDir dist/server",
+    "preview": "NODE_ENV=production esno src/ssr-server/index.ts"
+  },
+  "dependencies": {
+    "express": "^4.17.3",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "serve-static": "^1.14.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.13",
+    "@types/react": "^17.0.33",
+    "@types/react-dom": "^17.0.10",
+    "@vitejs/plugin-react": "^1.0.7",
+    "esbuild-darwin-arm64": "^0.14.23",
+    "nodemon": "^2.0.15",
+    "typescript": "^4.5.4",
+    "vite": "^2.8.0"
+  }
+}
