@@ -1,5 +1,6 @@
 import logo from './logo.svg'
 import './App.css'
+import { Helmet } from "react-helmet";
 
 export interface AppProps {
   data: any;
@@ -10,14 +11,13 @@ function App(props: AppProps) {
   // @ts-ignore
   return (
     <div className="App">
+      <Helmet>
+        <title>{ data.user }的页面</title>
+        <link rel="canonical" href="http://mysite.com/example" />
+      </Helmet>
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>Hello Vite + React!</p>
-        <p>
-          <button type="button">
-            服务端的状态: { data.a }
-          </button>
-        </p>
         <p>
           Edit <code>App.tsx</code> and save to test HMR updates.
         </p>

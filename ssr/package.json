@@ -3,22 +3,27 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "nodemon --watch src/ssr-server --exec 'esno src/ssr-server/index.ts'",
+    "dev": "nodemon --watch src/ssr-server/index.ts --exec 'esno src/ssr-server/index.ts'",
     "build": "npm run build:client && npm run build:server",
-    "build:client": "vite build --outDir dist/client",
+    "build:client": "vite build --outDir dist/client --ssrManifest --manifest",
     "build:server": "vite build --ssr src/entry-server.tsx --outDir dist/server",
-    "preview": "NODE_ENV=production esno src/ssr-server/index.ts"
+    "preview": "NODE_ENV=production esno src/ssr-server/index.ts",
+    "build:ssg": "npm run build && NODE_ENV=production esno scripts/ssg.ts"
   },
   "dependencies": {
     "express": "^4.17.3",
+    "happy-dom": "^2.45.0",
+    "jsdom": "^19.0.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-helmet": "^6.1.0",
     "serve-static": "^1.14.2"
   },
   "devDependencies": {
     "@types/express": "^4.17.13",
     "@types/react": "^17.0.33",
     "@types/react-dom": "^17.0.10",
+    "@types/react-helmet": "^6.1.5",
     "@vitejs/plugin-react": "^1.0.7",
     "esbuild-darwin-arm64": "^0.14.23",
     "nodemon": "^2.0.15",

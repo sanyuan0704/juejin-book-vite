@@ -2,12 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import './index.css'
 import App from './App'
-
-export function fetchData() {
-  return {
-    a: 1
-  }
-}
+import { fetchData } from './entry-server';
 
 // @ts-ignore
 const data = window.__SSR_DATA__ ?? fetchData();
