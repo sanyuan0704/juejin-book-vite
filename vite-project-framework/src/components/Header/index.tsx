@@ -3,17 +3,24 @@ import { Button, DatePicker } from 'antd';
 import { devDependencies } from '../../../package.json';
 import axios from 'axios';
 import styles from './index.module.scss';
-import logo from '@assets/imgs/vite.png?url';
+import logo from '@/assets/imgs/vite.png?url';
 // import Worker from './example.js?worker';
-import init from './fib.wasm';
+// import init from './fib.wasm';
 import SvgIcon from '../SvgIcon';
 // import { ReactComponent as ReactLogo } from '@assets/icons/logo.svg';
 
-export type FibFunc = (num: number) => number;
-init({}).then((exports) => {
-  const fibFunc = exports.fib as FibFunc;
-  console.log('Fib result: ', fibFunc(10));
-});
+// export type FibFunc = (num: number) => number;
+// wasm 引入
+// init({}).then((exports) => {
+//   const fibFunc = exports.fib as FibFunc;
+//   console.log('Fib result: ', fibFunc(10));
+// });
+
+// Web Worker 引入
+// const worker = new Worker();
+// worker.addEventListener('message', (e) => {
+//   console.log(e);
+// });
 
 const icons = import.meta.globEager('../../assets/icons/logo-*.svg');
 const iconUrls = Object.values(icons).map((mod) => {
@@ -21,11 +28,6 @@ const iconUrls = Object.values(icons).map((mod) => {
   const [svgName] = fileName.split('.');
   return svgName;
 });
-
-// const worker = new Worker();
-// worker.addEventListener('message', (e) => {
-//   console.log(e);
-// });
 
 export function Header() {
   useEffect(() => {

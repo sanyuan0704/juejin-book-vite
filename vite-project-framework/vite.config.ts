@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import windi from 'vite-plugin-windicss';
 import path from 'path';
@@ -8,15 +8,15 @@ import viteEslint from 'vite-plugin-eslint';
 import svgr from 'vite-plugin-svgr';
 import viteImagemin from 'vite-plugin-imagemin';
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons';
-import styleImport from 'vite-plugin-style-import';
+import createStyleImportPlugin from 'vite-plugin-style-import';
+import AutoImport from 'unplugin-auto-import/vite';
 
-const createStyleImportPlugin = styleImport;
 const variablePath = path.resolve('./src/variable.scss');
 
 export default defineConfig({
   resolve: {
     alias: {
-      '@assets': path.join(__dirname, 'src/assets')
+      '@': path.join(__dirname, 'src')
     }
   },
   css: {
@@ -28,6 +28,7 @@ export default defineConfig({
       scss: {
         additionalData: `@import "${variablePath}";`
       },
+      // 适配 antd
       less: {
         javascriptEnabled: true
       }
@@ -55,12 +56,13 @@ export default defineConfig({
     viteMockServe({
       mockPath: 'mock'
     }),
-    viteEslint(),
+    viteEslint({
+      exclude: ['**/*.spec.ts']
+    }),
     viteStylelint({
       exclude: /windicss|node_modules/
     }),
     createStyleImportPlugin({
-      // If you don’t have the resolve you need, you can write it directly in the lib, or you can provide us with PR
       libs: [
         {
           libraryName: 'antd',
@@ -93,6 +95,15 @@ export default defineConfig({
     }),
     createSvgIconsPlugin({
       iconDirs: [path.join(__dirname, 'src/assets/icons')]
+    }),
+    // 配合 Vitest 使用
+    AutoImport({
+      imports: ['vitest'],
+      dts: true
     })
-  ]
+  ],
+  test: {
+    globals: true,
+    environment: 'jsdom'
+  }
 });
