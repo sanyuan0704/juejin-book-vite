@@ -1,0 +1,19 @@
+{
+  "name": "package-b",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "imports": {
+    "#dep": "package-a"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "package-a": "link:../package-a"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
