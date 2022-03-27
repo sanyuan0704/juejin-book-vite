@@ -1,0 +1,16 @@
+{
+  "name": "ast-parser",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "esbuild-darwin-arm64": "^0.14.28",
+    "vitest": "^0.7.12"
+  }
+}
