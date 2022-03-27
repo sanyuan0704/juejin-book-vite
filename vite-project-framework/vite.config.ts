@@ -10,6 +10,7 @@ import viteImagemin from 'vite-plugin-imagemin';
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons';
 import createStyleImportPlugin from 'vite-plugin-style-import';
 import AutoImport from 'unplugin-auto-import/vite';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 const variablePath = path.resolve('./src/variable.scss');
 
@@ -100,6 +101,9 @@ export default defineConfig({
     AutoImport({
       imports: ['vitest'],
       dts: true
+    }),
+    visualizer({
+      open: process.env.NODE_ENV === 'production'
     })
   ],
   test: {
