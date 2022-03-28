@@ -25,12 +25,12 @@ export enum ScanMode {
 
 export type Token = {
   type: TokenType;
-  value?: string | number;
+  value?: string;
 };
 
 // 策略模式
 const INTERNAL_TOKENS_GENERATOR = {
-  number(value?: number) {
+  number(value?: string) {
     return { type: TokenType.Number, value };
   },
   function() {
@@ -187,7 +187,7 @@ export class Tokenizer {
     if (isFloat && currentChar === ".") {
       throw new Error('Unexpected character "."');
     }
-    this._tokens.push(INTERNAL_TOKENS_GENERATOR.number(+number));
+    this._tokens.push(INTERNAL_TOKENS_GENERATOR.number(number));
     this._resetScanMode();
   }
 

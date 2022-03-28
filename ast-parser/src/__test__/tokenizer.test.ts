@@ -5,9 +5,9 @@ describe("testTokenizerFunction", () => {
   test("test express", () => {
     const input = "1 + 2";
     const expected = [
-      { type: TokenType.Number, value: 1 },
+      { type: TokenType.Number, value: "1" },
       { type: TokenType.OPERATOR, value: "+" },
-      { type: TokenType.Number, value: 2 },
+      { type: TokenType.Number, value: "2" },
     ];
     const tokenizer = new Tokenizer(input);
     expect(tokenizer.tokenize()).toEqual(expected);
@@ -15,7 +15,7 @@ describe("testTokenizerFunction", () => {
 
   test("test number", () => {
     let input = "123.45";
-    let expected = [{ type: TokenType.Number, value: 123.45 }];
+    let expected = [{ type: TokenType.Number, value: "123.45" }];
     let tokenizer = new Tokenizer(input);
     expect(tokenizer.tokenize()).toEqual(expected);
 
@@ -57,6 +57,17 @@ describe("testTokenizerFunction", () => {
       { type: TokenType.LeftParen, value: "(" },
       { type: TokenType.StringLiteral, value: "hello world" },
       { type: TokenType.RightParen, value: ")" },
+    ];
+    const tokenizer = new Tokenizer(input);
+    expect(tokenizer.tokenize()).toEqual(expected);
+  });
+
+  test("test member express", () => {
+    const input = "foo.bar";
+    const expected = [
+      { type: TokenType.Identifier, value: "foo" },
+      { type: TokenType.Dot, value: "." },
+      { type: TokenType.Identifier, value: "bar" },
     ];
     const tokenizer = new Tokenizer(input);
     expect(tokenizer.tokenize()).toEqual(expected);

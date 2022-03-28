@@ -6,8 +6,14 @@ export enum NodeType {
   Identifier = "Identifier",
   BlockStatement = "BlockStatement",
   ExpressionStatement = "ExpressionStatement",
+  ReturnStatement = "ReturnStatement",
   CallExpression = "CallExpression",
   MemberExpression = "MemberExpression",
+}
+
+export enum FunctionType {
+  FunctionDeclaration,
+  CallExpression,
 }
 
 export interface Program extends Node {
@@ -24,26 +30,52 @@ export interface Identifier extends Node {
   name: string;
 }
 
-interface Statement extends Node {}
-interface Expression extends Node {}
-interface Declaration extends Statement {}
-
-export interface CallExpression extends Expression {
+export interface CallExpression {
   type: NodeType.CallExpression;
   callee: Expression;
   arguments: Expression[];
 }
 
-export interface FunctionDeclaration extends Function, Declaration {
+export interface MemberExpression {
+  type: NodeType.MemberExpression;
+  object: Identifier | MemberExpression;
+  property: Identifier;
+  computed: boolean;
+}
+
+export interface BlockStatement {
+  type: NodeType.BlockStatement;
+  body: Statement[];
+}
+
+export interface ExpressionStatement {
+  type: NodeType.ExpressionStatement;
+  expression: CallExpression | MemberExpression | Identifier;
+}
+
+export interface FunctionDeclaration extends FunctionNode {
   type: NodeType.FunctionDeclaration;
   id: Identifier;
 }
 
-interface Function extends Node {
+interface FunctionNode extends Node {
   id: Identifier | null;
   params: Expression[] | Identifier[];
-  body: Statement[];
+  body: BlockStatement;
 }
+
+interface ReturnStatement {
+  type: NodeType.ReturnStatement;
+  argument: Expression;
+}
+
+type Statement =
+  | FunctionDeclaration
+  | ExpressionStatement
+  | BlockStatement
+  | ReturnStatement;
+
+type Expression = CallExpression | MemberExpression | Identifier;
 
 export class Parser {
   private _token: Token[] = [];
@@ -52,13 +84,13 @@ export class Parser {
     this._token = [...token];
   }
 
-  parse() {
+  parse(): Program {
     const program = this._parseProgram();
     return program;
   }
 
-  private _parseProgram() {
-    const program = {
+  private _parseProgram(): Program {
+    const program: Program = {
       type: NodeType.Program,
       body: [],
     };
@@ -69,53 +101,86 @@ export class Parser {
     return program;
   }
 
-  private _parseStatement() {
+  private _parseStatement(): Statement {
+    debugger;
     if (this._checkCurrentTokenType(TokenType.Function)) {
       return this._parseFunctionStatement();
     } else if (this._checkCurrentTokenType(TokenType.Identifier)) {
       return this._parseExpressionStatement();
     } else if (this._checkCurrentTokenType(TokenType.LeftCurly)) {
       return this._parseBlockStatement();
+    } else if (this._checkCurrentTokenType(TokenType.Return)) {
+      return this._parseReturnStatement();
     }
+    throw new Error("Unexpected token");
   }
 
-  private _parseExpressionStatement() {
-    const expressionStatement = {
+  private _parseReturnStatement(): ReturnStatement {
+    this._goNext(TokenType.Return);
+    const argument = this._parseExpression();
+    const node: ReturnStatement = {
+      type: NodeType.ReturnStatement,
+      argument,
+    };
+    return node;
+  }
+
+  private _parseExpressionStatement(): ExpressionStatement {
+    const expressionStatement: ExpressionStatement = {
       type: NodeType.ExpressionStatement,
       expression: this._parseExpression(),
     };
     return expressionStatement;
   }
 
-  private _parseExpression() {
-    let expresion = this._parseIdentifier();
+  // 需要考虑 a.b.c 嵌套结构
+  private _parseExpression(): Expression {
+    // 拿到标识符，如 a
+    let expresion: Identifier | CallExpression | MemberExpression =
+      this._parseIdentifier();
     while (!this._isEnd()) {
       if (this._checkCurrentTokenType(TokenType.LeftParen)) {
         expresion = this._parseCallExpression(expresion);
       } else if (this._checkCurrentTokenType(TokenType.Dot)) {
-        expresion = this._parseMemberExpression(expresion);
+        // 继续解析，a.b
+        expresion = this._parseMemberExpression(expresion as MemberExpression);
       } else {
         break;
       }
     }
+    return expresion;
   }
 
-  private _parseCallExpression(callee: string) {
-    const arguments = this._parseParams("call");
-    const node = {
-      type: NodeType.CallExpression,
-      callee,
-      arguments,
+  private _parseMemberExpression(
+    object: Identifier | MemberExpression
+  ): MemberExpression {
+    this._goNext(TokenType.Dot);
+    const property = this._parseIdentifier();
+    const node: MemberExpression = {
+      type: NodeType.MemberExpression,
+      object,
+      property,
+      computed: false,
     };
     return node;
   }
 
-  private _parseFunctionStatement() {
+  private _parseCallExpression(callee: Expression) {
+    const args = this._parseParams(FunctionType.CallExpression) as Expression[];
+    const node: CallExpression = {
+      type: NodeType.CallExpression,
+      callee,
+      arguments: args,
+    };
+    return node;
+  }
+
+  private _parseFunctionStatement(): FunctionDeclaration {
     this._goNext(TokenType.Function);
     const id = this._parseIdentifier();
     const params = this._parseParams();
     const body = this._parseBlockStatement();
-    const node = {
+    const node: FunctionDeclaration = {
       type: NodeType.FunctionDeclaration,
       id,
       params,
@@ -124,12 +189,14 @@ export class Parser {
     return node;
   }
 
-  private _parseParams(mode: "declaration" | "call" = "declaration") {
+  private _parseParams(
+    mode: FunctionType = FunctionType.FunctionDeclaration
+  ): Identifier[] | Expression[] {
     this._goNext(TokenType.LeftParen);
     const params = [];
     while (!this._checkCurrentTokenType(TokenType.RightParen)) {
       let param =
-        mode === "declaration"
+        mode === FunctionType.FunctionDeclaration
           ? // 函数声明
             this._parseIdentifier()
           : // 函数调用
@@ -139,17 +206,21 @@ export class Parser {
         this._goNext(TokenType.Comma);
       }
     }
+    this._goNext(TokenType.RightParen);
     return params;
   }
 
   private _parseIdentifier(): Identifier {
-    const identifier = this._getCurrentToken().value;
+    const identifier: Identifier = {
+      type: NodeType.Identifier,
+      name: this._getCurrentToken().value!,
+    };
     this._goNext(TokenType.Identifier);
     return identifier;
   }
 
-  private _parseBlockStatement() {
-    const blockStatement = {
+  private _parseBlockStatement(): BlockStatement {
+    const blockStatement: BlockStatement = {
       type: NodeType.BlockStatement,
       body: [],
     };
@@ -162,16 +233,16 @@ export class Parser {
     return blockStatement;
   }
 
-  private _isEnd() {
+  private _isEnd(): boolean {
     return this._currentIndex >= this._token.length;
   }
 
-  private _checkCurrentTokenType(type: TokenType) {
+  private _checkCurrentTokenType(type: TokenType): boolean {
     const currentToken = this._token[this._currentIndex];
     return currentToken.type === type;
   }
 
-  private _goNext(type: TokenType) {
+  private _goNext(type: TokenType): Token {
     const currentToken = this._token[this._currentIndex];
     // 断言当前 Token 的类型，如果不能匹配，则抛出错误
     if (currentToken.type !== type) {
@@ -181,7 +252,7 @@ export class Parser {
     return currentToken;
   }
 
-  _getCurrentToken() {
+  _getCurrentToken(): Token {
     return this._token[this._currentIndex];
   }
 }
