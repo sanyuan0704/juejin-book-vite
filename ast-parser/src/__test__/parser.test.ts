@@ -70,7 +70,7 @@ describe("testParserFunction", () => {
   });
 
   test("test function", () => {
-    const input = "function foo(a, b) { return a.add(b) }";
+    const input = "function foo(a, b) { return a.add(b); }";
     const functionDeclaration: Program = {
       type: NodeType.Program,
       body: [

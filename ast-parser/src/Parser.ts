@@ -102,7 +102,6 @@ export class Parser {
   }
 
   private _parseStatement(): Statement {
-    debugger;
     if (this._checkCurrentTokenType(TokenType.Function)) {
       return this._parseFunctionStatement();
     } else if (this._checkCurrentTokenType(TokenType.Identifier)) {
@@ -111,9 +110,21 @@ export class Parser {
       return this._parseBlockStatement();
     } else if (this._checkCurrentTokenType(TokenType.Return)) {
       return this._parseReturnStatement();
+    } else if (this._checkCurrentTokenType(TokenType.Import)) {
+      // return this._parseImportStatement();
     }
     throw new Error("Unexpected token");
   }
+
+  // private _parseImportStatement(): ImportStatement {
+  //   this._goNext(TokenType.Import);
+  //   const id = this._parseIdentifier();
+  //   const node: ImportStatement = {
+  //     type: NodeType.ImportStatement,
+  //     id,
+  //   };
+  //   return node;
+  // }
 
   private _parseReturnStatement(): ReturnStatement {
     this._goNext(TokenType.Return);
@@ -207,6 +218,7 @@ export class Parser {
       }
     }
     this._goNext(TokenType.RightParen);
+    this._skipSemicolon();
     return params;
   }
 
@@ -240,6 +252,12 @@ export class Parser {
   private _checkCurrentTokenType(type: TokenType): boolean {
     const currentToken = this._token[this._currentIndex];
     return currentToken.type === type;
+  }
+
+  private _skipSemicolon(): void {
+    if (this._checkCurrentTokenType(TokenType.Semicolon)) {
+      this._goNext(TokenType.Semicolon);
+    }
   }
 
   private _goNext(type: TokenType): Token {

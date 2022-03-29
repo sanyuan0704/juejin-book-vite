@@ -1,9 +1,13 @@
 import { isWhiteSpace, isAlpha, isDigit } from "./utils";
 
 export enum TokenType {
+  Let = "Let",
+  Const = "Const",
+  Var = "Var",
+  Assign = "Assign",
   Function = "Function",
   Number = "Number",
-  OPERATOR = "Operator",
+  Operator = "Operator",
   Identifier = "Identifier",
   LeftParen = "LeftParen",
   RightParen = "RightParen",
@@ -14,6 +18,12 @@ export enum TokenType {
   Semicolon = "Semicolon",
   StringLiteral = "StringLiteral",
   Return = "Return",
+  Import = "Import",
+  Export = "Export",
+  Default = "Default",
+  From = "From",
+  As = "As",
+  Asterisk = "Asterisk",
 }
 
 export enum ScanMode {
@@ -30,6 +40,54 @@ export type Token = {
 
 // 策略模式
 const INTERNAL_TOKENS_GENERATOR = {
+  let() {
+    return { type: TokenType.Let, value: "let" };
+  },
+  const() {
+    return { type: TokenType.Const, value: "const" };
+  },
+  var() {
+    return { type: TokenType.Var, value: "var" };
+  },
+  assign() {
+    return { type: TokenType.Assign, value: "=" };
+  },
+  import() {
+    return {
+      type: TokenType.Import,
+      value: "import",
+    };
+  },
+  export() {
+    return {
+      type: TokenType.Export,
+      value: "export",
+    };
+  },
+  from() {
+    return {
+      type: TokenType.From,
+      value: "from",
+    };
+  },
+  as() {
+    return {
+      type: TokenType.As,
+      value: "as",
+    };
+  },
+  asterisk() {
+    return {
+      type: TokenType.Asterisk,
+      value: "*",
+    };
+  },
+  default() {
+    return {
+      type: TokenType.Default,
+      value: "default",
+    };
+  },
   number(value?: string) {
     return { type: TokenType.Number, value };
   },
@@ -47,7 +105,7 @@ const INTERNAL_TOKENS_GENERATOR = {
   },
   operator(value?: string) {
     return {
-      type: TokenType.OPERATOR,
+      type: TokenType.Operator,
       value,
     };
   },
@@ -83,7 +141,7 @@ const INTERNAL_TOKENS_GENERATOR = {
   },
 };
 
-type SingleCharTokens = "(" | ")" | "{" | "}" | "." | ";" | ",";
+type SingleCharTokens = "(" | ")" | "{" | "}" | "." | ";" | "," | "*" | "=";
 
 const KNOWN_SINGLE_CHAR_TOKENS = new Map<
   SingleCharTokens,
@@ -96,6 +154,8 @@ const KNOWN_SINGLE_CHAR_TOKENS = new Map<
   [".", INTERNAL_TOKENS_GENERATOR.dot],
   [";", INTERNAL_TOKENS_GENERATOR.semicolon],
   [",", INTERNAL_TOKENS_GENERATOR.comma],
+  ["*", INTERNAL_TOKENS_GENERATOR.asterisk],
+  ["=", INTERNAL_TOKENS_GENERATOR.assign],
 ]);
 
 const QUOTATION_TOKENS = ["'", '"', "`"];
@@ -194,7 +254,6 @@ export class Tokenizer {
   tokenize(): Token[] {
     // 扫描
     while (this._currentIndex < this._source.length) {
-      debugger;
       let currentChar = this._source[this._currentIndex];
       // 1. 判断是否是分隔符
       if (isWhiteSpace(currentChar)) {
@@ -206,8 +265,19 @@ export class Tokenizer {
         this.scanIndentifier();
         continue;
       }
-      // 3. 判断是否是单字符 () {} . ;
+      // 3. 判断是否是单字符 () {} . ; *
       else if (KNOWN_SINGLE_CHAR_TOKENS.has(currentChar as SingleCharTokens)) {
+        // * 字符特殊处理
+        if (currentChar === "*") {
+          // 前瞻，如果是数字，则认为是二元运算符，避免误判
+          const previousToken = this._getPreviousToken();
+          if (previousToken.type === TokenType.Number) {
+            this._tokens.push(INTERNAL_TOKENS_GENERATOR.operator(currentChar));
+            this._currentIndex++;
+            continue;
+          }
+          // 否则按照 import/export 中的 * 处理
+        }
         const token = KNOWN_SINGLE_CHAR_TOKENS.get(
           currentChar as SingleCharTokens
         )!();
@@ -258,6 +328,14 @@ export class Tokenizer {
 
   private _getTokens() {
     return this._tokens;
+  }
+
+  private _getPreviousToken() {
+    // 前瞻 Token
+    if (this._tokens.length > 0) {
+      return this._tokens[this._tokens.length - 1];
+    }
+    throw new Error("Previous token not found");
   }
 
   private _setScanMode(mode: ScanMode) {
