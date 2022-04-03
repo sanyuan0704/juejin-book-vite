@@ -1,4 +1,4 @@
-import { isWhiteSpace, isAlpha, isDigit } from "./utils";
+import { isWhiteSpace, isAlpha, isDigit, isUnderline } from "./utils";
 
 export enum TokenType {
   Let = "Let",
@@ -36,107 +36,147 @@ export enum ScanMode {
 export type Token = {
   type: TokenType;
   value?: string;
+  start: number;
+  end: number;
+  raw?: string;
 };
 
 // 策略模式
-const INTERNAL_TOKENS_GENERATOR = {
-  let() {
-    return { type: TokenType.Let, value: "let" };
+const TOKENS_GENERATOR: Record<string, (...args: any[]) => Token> = {
+  let(start: number) {
+    return { type: TokenType.Let, value: "let", start, end: start + 3 };
   },
-  const() {
-    return { type: TokenType.Const, value: "const" };
+  const(start: number) {
+    return { type: TokenType.Const, value: "const", start, end: start + 5 };
   },
-  var() {
-    return { type: TokenType.Var, value: "var" };
+  var(start: number) {
+    return { type: TokenType.Var, value: "var", start, end: start + 3 };
   },
-  assign() {
-    return { type: TokenType.Assign, value: "=" };
+  assign(start: number) {
+    return { type: TokenType.Assign, value: "=", start, end: start + 1 };
   },
-  import() {
+  import(start: number) {
     return {
       type: TokenType.Import,
       value: "import",
+      start,
+      end: start + 6,
     };
   },
-  export() {
+  export(start: number) {
     return {
       type: TokenType.Export,
       value: "export",
+      start,
+      end: start + 6,
     };
   },
-  from() {
+  from(start: number) {
     return {
       type: TokenType.From,
       value: "from",
+      start,
+      end: start + 4,
     };
   },
-  as() {
+  as(start: number) {
     return {
       type: TokenType.As,
       value: "as",
+      start,
+      end: start + 2,
     };
   },
-  asterisk() {
+  asterisk(start: number) {
     return {
       type: TokenType.Asterisk,
       value: "*",
+      start,
+      end: start + 1,
     };
   },
-  default() {
+  default(start: number) {
     return {
       type: TokenType.Default,
       value: "default",
+      start,
+      end: start + 7,
     };
   },
-  number(value?: string) {
-    return { type: TokenType.Number, value };
+  number(start: number, value: string) {
+    return {
+      type: TokenType.Number,
+      value,
+      start,
+      end: start + value.length,
+      raw: value,
+    };
   },
-  function() {
+  function(start: number) {
     return {
       type: TokenType.Function,
       value: "function",
+      start,
+      end: start + 8,
     };
   },
-  return() {
+  return(start: number) {
     return {
       type: TokenType.Return,
       value: "return",
+      start,
+      end: start + 6,
     };
   },
-  operator(value?: string) {
+  operator(start: number, value: string) {
     return {
       type: TokenType.Operator,
       value,
+      start,
+      end: start + value.length,
     };
   },
-  comma() {
+  comma(start: number) {
     return {
       type: TokenType.Comma,
       value: ",",
+      start,
+      end: start + 1,
     };
   },
-  leftParen() {
-    return { type: TokenType.LeftParen, value: "(" };
+  leftParen(start: number) {
+    return { type: TokenType.LeftParen, value: "(", start, end: start + 1 };
   },
-  rightParen() {
-    return { type: TokenType.RightParen, value: ")" };
+  rightParen(start: number) {
+    return { type: TokenType.RightParen, value: ")", start, end: start + 1 };
   },
-  leftCurly() {
-    return { type: TokenType.LeftCurly, value: "{" };
+  leftCurly(start: number) {
+    return { type: TokenType.LeftCurly, value: "{", start, end: start + 1 };
   },
-  rightCurly() {
-    return { type: TokenType.RightCurly, value: "}" };
+  rightCurly(start: number) {
+    return { type: TokenType.RightCurly, value: "}", start, end: start + 1 };
   },
-  dot() {
-    return { type: TokenType.Dot, value: "." };
+  dot(start: number) {
+    return { type: TokenType.Dot, value: ".", start, end: start + 1 };
   },
-  semicolon() {
-    return { type: TokenType.Semicolon, value: ";" };
+  semicolon(start: number) {
+    return { type: TokenType.Semicolon, value: ";", start, end: start + 1 };
   },
-  stringLiteral(value?: string) {
+  stringLiteral(start: number, value: string, raw: string) {
     return {
       type: TokenType.StringLiteral,
       value,
+      start,
+      end: start + value.length + 2,
+      raw,
+    };
+  },
+  identifier(start: number, value: string) {
+    return {
+      type: TokenType.Identifier,
+      value,
+      start,
+      end: start + value.length,
     };
   },
 };
@@ -145,17 +185,17 @@ type SingleCharTokens = "(" | ")" | "{" | "}" | "." | ";" | "," | "*" | "=";
 
 const KNOWN_SINGLE_CHAR_TOKENS = new Map<
   SingleCharTokens,
-  typeof INTERNAL_TOKENS_GENERATOR[keyof typeof INTERNAL_TOKENS_GENERATOR]
+  typeof TOKENS_GENERATOR[keyof typeof TOKENS_GENERATOR]
 >([
-  ["(", INTERNAL_TOKENS_GENERATOR.leftParen],
-  [")", INTERNAL_TOKENS_GENERATOR.rightParen],
-  ["{", INTERNAL_TOKENS_GENERATOR.leftCurly],
-  ["}", INTERNAL_TOKENS_GENERATOR.rightCurly],
-  [".", INTERNAL_TOKENS_GENERATOR.dot],
-  [";", INTERNAL_TOKENS_GENERATOR.semicolon],
-  [",", INTERNAL_TOKENS_GENERATOR.comma],
-  ["*", INTERNAL_TOKENS_GENERATOR.asterisk],
-  ["=", INTERNAL_TOKENS_GENERATOR.assign],
+  ["(", TOKENS_GENERATOR.leftParen],
+  [")", TOKENS_GENERATOR.rightParen],
+  ["{", TOKENS_GENERATOR.leftCurly],
+  ["}", TOKENS_GENERATOR.rightCurly],
+  [".", TOKENS_GENERATOR.dot],
+  [";", TOKENS_GENERATOR.semicolon],
+  [",", TOKENS_GENERATOR.comma],
+  ["*", TOKENS_GENERATOR.asterisk],
+  ["=", TOKENS_GENERATOR.assign],
 ]);
 
 const QUOTATION_TOKENS = ["'", '"', "`"];
@@ -188,31 +228,35 @@ export class Tokenizer {
     // 继续扫描，直到收集完整的单词
     let identifier = "";
     let currentChar = this._getCurrentChar();
-    while (isAlpha(currentChar)) {
+    const startIndex = this._currentIndex;
+    while (
+      isAlpha(currentChar) ||
+      isDigit(currentChar) ||
+      isUnderline(currentChar)
+    ) {
       identifier += currentChar;
       this._currentIndex++;
       currentChar = this._getCurrentChar();
     }
+    let token;
     // 1. 结果为关键字
-    if (identifier in INTERNAL_TOKENS_GENERATOR) {
-      const token =
-        INTERNAL_TOKENS_GENERATOR[
-          identifier as keyof typeof INTERNAL_TOKENS_GENERATOR
-        ]();
-      this._tokens.push(token);
+    if (identifier in TOKENS_GENERATOR) {
+      token =
+        TOKENS_GENERATOR[identifier as keyof typeof TOKENS_GENERATOR](
+          startIndex
+        );
     }
     // 2. 结果为标识符
     else {
-      this._tokens.push({
-        type: TokenType.Identifier,
-        value: identifier,
-      });
+      token = TOKENS_GENERATOR["identifier"](startIndex, identifier);
     }
+    this._tokens.push(token);
     this._resetScanMode();
   }
 
   scanStringLiteral(): void {
     this._setScanMode(ScanMode.StringLiteral);
+    const startIndex = this._currentIndex;
     let currentChar = this._getCurrentChar();
     // 记录引号
     const startQuotation = currentChar;
@@ -225,12 +269,18 @@ export class Tokenizer {
       this._currentIndex++;
       currentChar = this._getCurrentChar();
     }
-    this._tokens.push(INTERNAL_TOKENS_GENERATOR.stringLiteral(str));
+    const token = TOKENS_GENERATOR.stringLiteral(
+      startIndex,
+      str,
+      `${startQuotation}${str}${startQuotation}`
+    );
+    this._tokens.push(token);
     this._resetScanMode();
   }
 
   _scanNumber(): void {
     this._setScanMode(ScanMode.Number);
+    const startIndex = this._currentIndex;
     let number = "";
     let currentChar = this._getCurrentChar();
     let isFloat = false;
@@ -247,7 +297,8 @@ export class Tokenizer {
     if (isFloat && currentChar === ".") {
       throw new Error('Unexpected character "."');
     }
-    this._tokens.push(INTERNAL_TOKENS_GENERATOR.number(number));
+    const token = TOKENS_GENERATOR.number(startIndex, number);
+    this._tokens.push(token);
     this._resetScanMode();
   }
 
@@ -255,6 +306,7 @@ export class Tokenizer {
     // 扫描
     while (this._currentIndex < this._source.length) {
       let currentChar = this._source[this._currentIndex];
+      const startIndex = this._currentIndex;
       // 1. 判断是否是分隔符
       if (isWhiteSpace(currentChar)) {
         this._currentIndex++;
@@ -272,7 +324,9 @@ export class Tokenizer {
           // 前瞻，如果是数字，则认为是二元运算符，避免误判
           const previousToken = this._getPreviousToken();
           if (previousToken.type === TokenType.Number) {
-            this._tokens.push(INTERNAL_TOKENS_GENERATOR.operator(currentChar));
+            this._tokens.push(
+              TOKENS_GENERATOR.operator(startIndex, currentChar)
+            );
             this._currentIndex++;
             continue;
           }
@@ -280,7 +334,7 @@ export class Tokenizer {
         }
         const token = KNOWN_SINGLE_CHAR_TOKENS.get(
           currentChar as SingleCharTokens
-        )!();
+        )!(startIndex);
         this._tokens.push(token);
         this._currentIndex++;
       }
@@ -293,12 +347,23 @@ export class Tokenizer {
       }
       // 5. 判断二元计算符
       else if (
-        (OPERATOR_TOKENS.includes(currentChar) ||
-          OPERATOR_TOKENS.includes(currentChar + this._getNextChar())) &&
+        OPERATOR_TOKENS.includes(currentChar) &&
         this._scanMode === ScanMode.Normal
       ) {
-        this._tokens.push(INTERNAL_TOKENS_GENERATOR.operator(currentChar));
+        this._tokens.push(TOKENS_GENERATOR.operator(startIndex, currentChar));
         this._currentIndex++;
+        continue;
+      } else if (
+        OPERATOR_TOKENS.includes(currentChar + this._getNextChar()) &&
+        this._scanMode === ScanMode.Normal
+      ) {
+        this._tokens.push(
+          TOKENS_GENERATOR.operator(
+            startIndex,
+            currentChar + this._getNextChar()
+          )
+        );
+        this._currentIndex += 2;
         continue;
       }
       // 6. 判断数字

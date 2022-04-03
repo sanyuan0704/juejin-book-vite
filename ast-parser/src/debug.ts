@@ -20,22 +20,10 @@
 // const tokenizer = new Tokenizer(input);
 // console.log(tokenizer.tokenize());
 
-import { Parser, MemberExpression, NodeType } from "./Parser";
 import { Tokenizer } from "./Tokenizer";
-const input = "foo.bar";
-const expected: MemberExpression = {
-  type: NodeType.MemberExpression,
-  object: {
-    type: NodeType.Identifier,
-    name: "foo",
-  },
-  property: {
-    type: NodeType.Identifier,
-    name: "bar",
-  },
-  computed: false,
-};
+import { Parser } from "./Parser";
+const input = "let a = 1;";
 const tokenizer = new Tokenizer(input);
 const tokens = tokenizer.tokenize();
 const parser = new Parser(tokens);
-console.log(JSON.stringify(parser.parse(), null, 2));
+parser.parse();

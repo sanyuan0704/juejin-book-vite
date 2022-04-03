@@ -12,3 +12,8 @@ export function isAlpha(char: string): boolean {
 export function isDigit(char: string): boolean {
   return char >= "0" && char <= "9";
 }
+
+// 下划线
+export function isUnderline(char: string): boolean {
+  return char === "_";
+}
