@@ -250,6 +250,11 @@ export class Parser {
     // export * from 'mod'
     else {
       this._goNext(TokenType.Asterisk);
+      let exported: Identifier | null = null;
+      if (this._checkCurrentTokenType(TokenType.As)) {
+        this._goNext(TokenType.As);
+        exported = this._parseIdentifier();
+      }
       this._goNext(TokenType.From);
       const source = this._parseLiteral();
       exportDeclaration = {
@@ -257,7 +262,7 @@ export class Parser {
         start,
         end: source.end,
         source,
-        exported: null,
+        exported,
       };
     }
     if (!exportDeclaration) {
@@ -528,7 +533,7 @@ export class Parser {
   }
 
   private _getPreviousToken(): Token {
-    return this._tokens[this._currentIndex];
+    return this._tokens[this._currentIndex - 1];
   }
 
   private _getNextToken(): Token | false {

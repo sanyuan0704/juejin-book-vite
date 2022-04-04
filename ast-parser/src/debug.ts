@@ -20,10 +20,6 @@
 // const tokenizer = new Tokenizer(input);
 // console.log(tokenizer.tokenize());
 
-import { Tokenizer } from "./Tokenizer";
-import { Parser } from "./Parser";
-const input = "let a = 1;";
-const tokenizer = new Tokenizer(input);
-const tokens = tokenizer.tokenize();
-const parser = new Parser(tokens);
-parser.parse();
+import { parse } from "./index";
+const ast = parse('export const a = "2"');
+console.log(JSON.stringify(ast, null, 2));
