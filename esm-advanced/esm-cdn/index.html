@@ -5,22 +5,40 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>ESM CDN</title>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://ga.jspm.io/npm:react@17.0.2/dev.index.js",
+      "react-dom": "https://ga.jspm.io/npm:react-dom@17.0.2/dev.index.js"
+    },
+    "scopes": {
+      "https://ga.jspm.io/": {
+        "object-assign": "https://ga.jspm.io/npm:object-assign@4.1.1/index.js",
+        "scheduler": "https://ga.jspm.io/npm:scheduler@0.20.2/dev.index.js",
+        "scheduler/tracing": "https://ga.jspm.io/npm:scheduler@0.20.2/dev.tracing.js"
+      }
+    }
+  }
+</script>
 </head>
 
 <body>
   <div id="root"></div>
-  <script type="importmap">
-  {
-    "imports": {
-      "react": "https://cdn.skypack.dev/react"
-    }
+  <script type="text/jsx" data-type="module">
+  // 浏览器内写 React 组件
+  import React from 'react';
+  import ReactDOM from 'react-dom';
+  function App() {
+    return (
+      <div>
+        <h1>Hello, world!</h1>
+        <p>渲染 React 组件，没有装任何依赖</p>
+      </div>
+    );
   }
-  </script>
-
-  <script type="module">
-    import React from 'react';
-    console.log(React)
+  ReactDOM.render(<App />, document.getElementById('root'));
   </script>
 </body>
 
