@@ -1,4 +1,5 @@
 export const keys = Object.keys;
+export const values = Object.values;
 
 export const hasOwnProp = Object.prototype.hasOwnProperty;
 

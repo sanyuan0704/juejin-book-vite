@@ -13,9 +13,20 @@
     "baseUrl": "src",
     "rootDir": "src",
     "declaration": true,
+    "plugins": [
+      {
+        "transform": "typescript-transform-paths"
+      },
+      {
+        "transform": "typescript-transform-paths",
+        "afterDeclarations": true
+      }
+    ],
     "paths": {
-      "utils": ["src/utils"]
+      "*": ["./*"],
+      "ast-parser": ["../../ast-parser"]
     }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "references": [{ "path": "../ast-parser" }]
 }

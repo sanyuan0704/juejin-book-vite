@@ -1,6 +1,4 @@
-import { basename } from 'path';
-import { writeFile } from 'fs';
-import Bundle from './Bundle';
+import { Bundle } from 'Bundle';
 
 export interface RollupOptions {
   input: string;
@@ -11,7 +9,6 @@ export function rollup(options: RollupOptions) {
   const bundle = new Bundle({
     entry: options.input
   });
-
   return bundle.build().then(() => {
     return {
       generate: () => bundle.render()

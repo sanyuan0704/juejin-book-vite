@@ -7,7 +7,9 @@ export enum NodeType {
   ExpressionStatement = "ExpressionStatement",
   ReturnStatement = "ReturnStatement",
   CallExpression = "CallExpression",
+  BinaryExpression = "BinaryExpression",
   MemberExpression = "MemberExpression",
+  FunctionExpression = "FunctionExpression",
   Literal = "Literal",
   ImportDeclaration = "ImportDeclaration",
   ImportSpecifier = "ImportSpecifier",
@@ -71,6 +73,10 @@ export interface ExpressionStatement extends Node {
   expression: Expression;
 }
 
+export interface FunctionExpression extends FunctionNode {
+  type: NodeType.FunctionExpression;
+}
+
 export interface FunctionDeclaration extends FunctionNode {
   type: NodeType.FunctionDeclaration;
   id: Identifier | null;
@@ -116,7 +122,12 @@ export interface ImportDeclaration extends Node {
   source: Literal;
 }
 
-export type Declaration = FunctionDeclaration | VariableDeclaration;
+export type Declaration =
+  | FunctionDeclaration
+  | VariableDeclaration
+  | ImportDeclaration
+  | ExportDeclaration
+  | VariableDeclarator;
 
 export interface ExportSpecifier extends Node {
   type: NodeType.ExportSpecifier;
@@ -147,6 +158,12 @@ export type ExportDeclaration =
   | ExportDefaultDeclaration
   | ExportAllDeclaration;
 
+export interface BinaryExpression extends Node {
+  type: NodeType.BinaryExpression;
+  left: Expression;
+  right: Expression;
+  operator: string;
+}
 export interface FunctionNode extends Node {
   id: Identifier | null;
   params: Expression[] | Identifier[];
@@ -167,4 +184,10 @@ export type Statement =
   | BlockStatement
   | ReturnStatement;
 
-export type Expression = CallExpression | MemberExpression | Identifier;
+export type Expression =
+  | CallExpression
+  | MemberExpression
+  | Identifier
+  | Literal
+  | BinaryExpression
+  | FunctionExpression;

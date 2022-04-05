@@ -323,7 +323,10 @@ export class Tokenizer {
         if (currentChar === "*") {
           // 前瞻，如果是数字，则认为是二元运算符，避免误判
           const previousToken = this._getPreviousToken();
-          if (previousToken.type === TokenType.Number) {
+          if (
+            previousToken.type !== TokenType.Import &&
+            previousToken.type !== TokenType.Export
+          ) {
             this._tokens.push(
               TOKENS_GENERATOR.operator(startIndex, currentChar)
             );

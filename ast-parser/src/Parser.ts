@@ -20,6 +20,8 @@ import {
   ReturnStatement,
   ExportSpecifier,
   ExportDeclaration,
+  FunctionExpression,
+  BinaryExpression,
 } from "./node-types";
 
 export class Parser {
@@ -53,7 +55,7 @@ export class Parser {
 
   private _parseStatement(): Statement {
     if (this._checkCurrentTokenType(TokenType.Function)) {
-      return this._parseFunctionStatement();
+      return this._parseFunctionDeclaration() as FunctionDeclaration;
     } else if (this._checkCurrentTokenType(TokenType.Identifier)) {
       return this._parseExpressionStatement();
     } else if (this._checkCurrentTokenType(TokenType.LeftCurly)) {
@@ -73,6 +75,7 @@ export class Parser {
     ) {
       return this._parseVariableDeclaration();
     }
+    console.log(this._getCurrentToken());
     throw new Error("Unexpected token");
   }
 
@@ -158,8 +161,9 @@ export class Parser {
     if (this._checkCurrentTokenType(TokenType.Default)) {
       this._goNext(TokenType.Default);
       // export default a
+      // export default obj.a
       if (this._checkCurrentTokenType(TokenType.Identifier)) {
-        const local = this._parseIdentifier();
+        const local = this._parseExpression();
         exportDeclaration = {
           type: NodeType.ExportDefaultDeclaration,
           declaration: local,
@@ -169,7 +173,7 @@ export class Parser {
       }
       // export default function() {}
       else if (this._checkCurrentTokenType(TokenType.Function)) {
-        const declaration = this._parseFunctionStatement();
+        const declaration = this._parseFunctionDeclaration();
         exportDeclaration = {
           type: NodeType.ExportDefaultDeclaration,
           declaration,
@@ -237,7 +241,8 @@ export class Parser {
     }
     // export function
     else if (this._checkCurrentTokenType(TokenType.Function)) {
-      const declaration = this._parseFunctionStatement();
+      const declaration =
+        this._parseFunctionDeclaration() as FunctionDeclaration;
       exportDeclaration = {
         type: NodeType.ExportNamedDeclaration,
         declaration,
@@ -337,6 +342,7 @@ export class Parser {
       start,
       end: argument.end,
     };
+    this._skipSemicolon();
     return node;
   }
 
@@ -353,20 +359,49 @@ export class Parser {
 
   // 需要考虑 a.b.c 嵌套结构
   private _parseExpression(): Expression {
+    // 先检查是否是一个函数表达式
+    if (this._checkCurrentTokenType(TokenType.Function)) {
+      return this._parseFunctionExpression();
+    }
+    if (
+      this._checkCurrentTokenType([TokenType.Number, TokenType.StringLiteral])
+    ) {
+      return this._parseLiteral();
+    }
     // 拿到标识符，如 a
-    let expresion: Identifier | CallExpression | MemberExpression =
-      this._parseIdentifier();
+    let expresion: Expression = this._parseIdentifier();
     while (!this._isEnd()) {
       if (this._checkCurrentTokenType(TokenType.LeftParen)) {
         expresion = this._parseCallExpression(expresion);
       } else if (this._checkCurrentTokenType(TokenType.Dot)) {
         // 继续解析，a.b
         expresion = this._parseMemberExpression(expresion as MemberExpression);
+      } else if (this._checkCurrentTokenType(TokenType.Operator)) {
+        // 解析 a + b
+        expresion = this.__parseBinaryOperatorExpression(expresion);
       } else {
         break;
       }
     }
     return expresion;
+  }
+
+  private __parseBinaryOperatorExpression(
+    expression: Expression
+  ): BinaryExpression {
+    const { start } = this._getCurrentToken();
+    const operator = this._getCurrentToken().value!;
+    this._goNext(TokenType.Operator);
+    const right = this._parseExpression();
+    const node: BinaryExpression = {
+      type: NodeType.BinaryExpression,
+      operator,
+      left: expression,
+      right,
+      start,
+      end: right.end,
+    };
+    return node;
   }
 
   private _parseMemberExpression(
@@ -400,7 +435,7 @@ export class Parser {
     return node;
   }
 
-  private _parseFunctionStatement(): FunctionDeclaration {
+  private _parseFunctionDeclaration(): FunctionDeclaration {
     const { start } = this._getCurrentToken();
     this._goNext(TokenType.Function);
     let id = null;
@@ -411,6 +446,26 @@ export class Parser {
     const body = this._parseBlockStatement();
     const node: FunctionDeclaration = {
       type: NodeType.FunctionDeclaration,
+      id,
+      params,
+      body,
+      start,
+      end: body.end,
+    };
+    return node;
+  }
+
+  private _parseFunctionExpression(): FunctionExpression {
+    const { start } = this._getCurrentToken();
+    this._goNext(TokenType.Function);
+    let id = null;
+    if (this._checkCurrentTokenType(TokenType.Identifier)) {
+      id = this._parseIdentifier();
+    }
+    const params = this._parseParams();
+    const body = this._parseBlockStatement();
+    const node: FunctionExpression = {
+      type: NodeType.FunctionExpression,
       id,
       params,
       body,

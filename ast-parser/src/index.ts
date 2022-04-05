@@ -7,3 +7,6 @@ export function parse(code: string) {
   const parser = new Parser(tokens);
   return parser.parse();
 }
+
+export * from "./Tokenizer";
+export * from "./node-types";

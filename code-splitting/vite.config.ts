@@ -45,8 +45,9 @@ export default defineConfig({
   plugins: [react()],
   build: {
     minify: false,
+    manifest: true,
     // 可以这个配置关闭 css codesplit
-    // cssCodeSplit: false,
+    cssCodeSplit: false,
     rollupOptions: {
       output: {
         // 1. 对象配置

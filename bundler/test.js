@@ -5,16 +5,15 @@
 //   sourceType: 'module'
 // });
 // console.log(res);
-
+const fs = require('fs');
 const { rollup } = require('./dist/rollup');
-
 
 async function build() {
   const bundle = await rollup({
     input: './test/index.js'
   });
-  const { code } = bundle.generate();
-  console.log(code);
+  const res = bundle.generate();
+  fs.writeFileSync('./test/bundle.js', res.code);
 }
 
 build();
