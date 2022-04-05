@@ -1,13 +1,13 @@
-const a$1 = 1;
+const a = 1;
 
-const b = a$1 + 1;
+const b = a + 1;
 
 const multi = function (a, b) {
   return a * b;
 };
 
 function testFunc() {
-  console.log(a$1);
+  console.log(a);
 }
 
 function afunc (a, b) {

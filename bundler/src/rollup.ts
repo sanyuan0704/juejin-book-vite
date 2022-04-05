@@ -27,3 +27,5 @@ export function rollup(options: RollupOptions) {
     };
   });
 }
+
+export * from 'ast-parser';
