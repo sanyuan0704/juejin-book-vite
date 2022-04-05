@@ -30,7 +30,6 @@ export class ModuleLoader {
     const path = this.resolveId(id, importer);
 
     if (path === false) {
-      // TODO external
       return null;
     }
     const existModule = this.bundle.getModuleById(path);
