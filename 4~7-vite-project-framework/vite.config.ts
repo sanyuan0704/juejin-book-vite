@@ -11,12 +11,14 @@ import { createSvgIconsPlugin } from 'vite-plugin-svg-icons';
 import createStyleImportPlugin from 'vite-plugin-style-import';
 import AutoImport from 'unplugin-auto-import/vite';
 import { visualizer } from 'rollup-plugin-visualizer';
+import { normalizePath } from 'vite';
 
-const variablePath = path.resolve('./src/variable.scss');
+// 用 normalizePath 解决 window 下的路径问题
+const variablePath = normalizePath(path.resolve('./src/variable.scss'));
 
 export default defineConfig({
   resolve: {
-    alias: {
+    alias: { 
       '@': path.join(__dirname, 'src')
     }
   },
