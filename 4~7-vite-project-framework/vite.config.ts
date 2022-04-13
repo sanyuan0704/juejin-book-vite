@@ -12,18 +12,25 @@ import createStyleImportPlugin from 'vite-plugin-style-import';
 import AutoImport from 'unplugin-auto-import/vite';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { normalizePath } from 'vite';
+import autoprefixer from 'autoprefixer';
 
 // 用 normalizePath 解决 window 下的路径问题
 const variablePath = normalizePath(path.resolve('./src/variable.scss'));
 
 export default defineConfig({
   resolve: {
-    alias: { 
+    alias: {
       '@': path.join(__dirname, 'src')
     }
   },
   css: {
-    postcss: {},
+    postcss: {
+      plugins: [
+        autoprefixer({
+          overrideBrowserslist: ['Chrome > 40', 'ff > 31', 'ie 11']
+        })
+      ]
+    },
     modules: {
       generateScopedName: '[name]__[local]___[hash:base64:5]'
     },
