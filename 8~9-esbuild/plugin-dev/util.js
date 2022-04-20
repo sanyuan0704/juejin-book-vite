@@ -19,4 +19,4 @@ const generateHTML = (scripts, links) => `
 </html>
 `;
 
-export { createLink, createScript, generateHTML };
+module.exports = { createLink, createScript, generateHTML };
