@@ -1,25 +1,14 @@
 import connect from "connect";
-import { Server } from "http";
 import { red } from "picocolors";
-import WebSocket from "ws";
-import { HMR_HEADER } from "./constants";
+import { WebSocketServer, WebSocket } from "ws";
+import { HMR_PORT } from "./constants";
 
 export function createWebSocketServer(server: connect.Server): {
   send: (msg: string) => void;
   close: () => void;
 } {
-  const wss = new WebSocket.Server({
-    noServer: true,
-  });
-
-  server.on("upgrade", (req, socket, head) => {
-    if (req.headers["sec-websocket-protocol"] === HMR_HEADER) {
-      wss.handleUpgrade(req, socket, head, (ws) => {
-        wss.emit("connection", ws, req);
-      });
-    }
-  });
-
+  let wss: WebSocketServer;
+  wss = new WebSocketServer({ port: HMR_PORT });
   wss.on("connection", (socket) => {
     socket.send(JSON.stringify({ type: "connected" }));
   });

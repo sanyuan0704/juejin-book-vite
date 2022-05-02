@@ -18,4 +18,5 @@ export interface Plugin {
     code: string,
     id: string
   ) => Promise<SourceDescription | null> | SourceDescription | null;
+  transformIndexHtml?: (raw: string) => Promise<string> | string;
 }

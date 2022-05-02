@@ -1,6 +1,15 @@
 import { init, parse } from "es-module-lexer";
-import { BARE_IMPORT_RE, PRE_BUNDLE_DIR } from "../constants";
-import { isJSRequest } from "../utils";
+import {
+  BARE_IMPORT_RE,
+  CLIENT_PUBLIC_PATH,
+  PRE_BUNDLE_DIR,
+} from "../constants";
+import {
+  cleanUrl,
+  getShortName,
+  isInternalRequest,
+  isJSRequest,
+} from "../utils";
 import MagicString from "magic-string";
 import path from "path";
 import { Plugin } from "../plugin";
@@ -18,7 +27,6 @@ export function importAnalysisPlugin(): Plugin {
         return null;
       }
       await init;
-      // 用 esbuild
       const importedModules = new Set<string>();
       const [imports] = parse(code);
       const ms = new MagicString(code);
@@ -27,11 +35,23 @@ export function importAnalysisPlugin(): Plugin {
           id,
           importer
         );
-        return resolved?.id;
+        if (!resolved) {
+          return;
+        }
+        const cleanedId = cleanUrl(resolved.id);
+        const mod = moduleGraph.getModuleById(cleanedId);
+        let resolvedId = `/${getShortName(resolved.id, serverContext.root)}`;
+        if (mod && mod.lastHMRTimestamp > 0) {
+          resolvedId += "?t=" + mod.lastHMRTimestamp;
+        }
+        return resolvedId;
       };
+      const { moduleGraph } = serverContext;
+      const curMod = moduleGraph.getModuleById(id)!;
+
       for (const importInfo of imports) {
         const { s: modStart, e: modEnd, n: modSource } = importInfo;
-        if (!modSource) continue;
+        if (!modSource || isInternalRequest(modSource)) continue;
         // 静态资源
         if (modSource.endsWith(".svg")) {
           // 加上 ?import 后缀
@@ -56,10 +76,19 @@ export function importAnalysisPlugin(): Plugin {
           }
         }
       }
-      const { moduleGraph } = serverContext;
+      // 只对业务源码注入
+      if (!id.includes("node_modules")) {
+        // 注入 HMR 相关的工具函数
+        ms.prepend(
+          `import { createHotContext as __vite__createHotContext } from "${CLIENT_PUBLIC_PATH}";` +
+            `import.meta.hot = __vite__createHotContext(${JSON.stringify(
+              cleanUrl(curMod.url)
+            )});`
+        );
+      }
 
-      const curMod = moduleGraph.getModuleById(id)!;
       moduleGraph.updateModuleInfo(curMod, importedModules);
+
       return {
         code: ms.toString(),
         map: ms.generateMap(),

@@ -20,7 +20,7 @@ export async function optimize(root: string) {
   });
   console.log(
     `${green("需要预构建的依赖")}:\n${[...deps]
-      .map(blue)
+      .map(green)
       .map((item) => `  ${item}`)
       .join("\n")}`
   );

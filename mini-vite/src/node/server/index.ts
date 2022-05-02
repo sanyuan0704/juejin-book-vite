@@ -1,5 +1,4 @@
 import connect from "connect";
-import sirv from "sirv";
 import { optimize } from "../optimizer/index";
 import { blue, green } from "picocolors";
 import { transformMiddleware } from "./middlewares/transform";
@@ -11,6 +10,7 @@ import { staticMiddleware } from "./middlewares/static";
 import { createWebSocketServer } from "../ws";
 import chokidar, { FSWatcher } from "chokidar";
 import { bindingHMREvents } from "../hmr";
+import { Plugin } from "../plugin";
 
 export interface ServerContext {
   root: string;
@@ -19,6 +19,7 @@ export interface ServerContext {
   app: connect.Server;
   ws: { send: (data: any) => void; close: () => void };
   watcher: FSWatcher;
+  plugins: Plugin[];
 }
 
 export async function startDevServer() {
@@ -42,6 +43,7 @@ export async function startDevServer() {
     pluginContainer,
     ws,
     watcher,
+    plugins,
   };
   bindingHMREvents(serverContext);
   for (const plugin of plugins) {

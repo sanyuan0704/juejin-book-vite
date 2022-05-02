@@ -1,4 +1,4 @@
-import { CLIENT_PUBLIC_PATH } from "../constants";
+import { CLIENT_PUBLIC_PATH, HMR_PORT } from "../constants";
 import { Plugin } from "../plugin";
 import fs from "fs-extra";
 import path from "path";
@@ -28,9 +28,15 @@ export function clientInjectPlugin(): Plugin {
         );
         const code = await fs.readFile(realPath, "utf-8");
         return {
-          code,
+          code: code.replace("__HMR_PORT__", JSON.stringify(HMR_PORT)),
         };
       }
+    },
+    transformIndexHtml(raw) {
+      return raw.replace(
+        /(<head[^>]*>)/i,
+        `$1<script type="module" src="${CLIENT_PUBLIC_PATH}"></script>`
+      );
     },
   };
 }

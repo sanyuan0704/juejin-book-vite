@@ -1,10 +1,7 @@
 import { ServerContext } from "./server/index";
 import { blue, green } from "picocolors";
 import path from "path";
-
-function getShortName(file: string, root: string) {
-  return file.startsWith(root + "/") ? path.posix.relative(root, file) : file;
-}
+import { getShortName } from "./utils";
 
 export function bindingHMREvents(serverContext: ServerContext) {
   const { watcher, ws, root } = serverContext;
@@ -14,11 +11,11 @@ export function bindingHMREvents(serverContext: ServerContext) {
     const { moduleGraph } = serverContext;
     await moduleGraph.invalidateModule(file);
     ws.send({
-      type: "updates",
+      type: "update",
       updates: [
         {
           type: "js-update",
-          tiemstamp: Date.now(),
+          timestamp: Date.now(),
           path: "/" + getShortName(file, root),
           acceptedPath: "/" + getShortName(file, root),
         },

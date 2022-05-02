@@ -30,3 +30,4 @@ export const PRE_BUNDLE_DIR = path.join("node_modules", ".m-vite");
 export const DEFAULT_EXTERSIONS = [".tsx", ".ts", ".jsx", "js"];
 export const HMR_HEADER = "vite-hmr";
 export const CLIENT_PUBLIC_PATH = "/@vite/client";
+export const HMR_PORT = 24678;

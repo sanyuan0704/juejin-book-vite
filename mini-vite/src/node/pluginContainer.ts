@@ -16,7 +16,7 @@ export interface PluginContainer {
 // 模拟 Rollup 的插件机制
 export const createPluginContainer = (plugins: Plugin[]): PluginContainer => {
   // 插件上下文对象
-  // @ts-expect-error 这里仅实现上下文对象的 resolve 方法
+  // @ts-ignore 这里仅实现上下文对象的 resolve 方法
   class Context implements RollupPluginContext {
     async resolve(id: string, importer?: string) {
       let out = await pluginContainer.resolveId(id, importer);

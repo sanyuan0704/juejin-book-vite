@@ -1,4 +1,5 @@
 import { PartialResolvedId, TransformResult } from "rollup";
+import { cleanUrl } from "./utils";
 
 export class ModuleNode {
   // 资源访问 url
@@ -8,6 +9,7 @@ export class ModuleNode {
   importers = new Set<ModuleNode>();
   importedModules = new Set<ModuleNode>();
   transformResult: TransformResult | null = null;
+  lastHMRTimestamp = 0;
   constructor(url: string) {
     this.url = url;
   }
@@ -54,7 +56,7 @@ export class ModuleGraph {
     for (const curImports of importedModules) {
       const dep =
         typeof curImports === "string"
-          ? await this.ensureEntryFromUrl(curImports)
+          ? await this.ensureEntryFromUrl(cleanUrl(curImports))
           : curImports;
       if (dep) {
         mod.importedModules.add(dep);
@@ -63,7 +65,7 @@ export class ModuleGraph {
     }
     // 清除已经不再被引用的依赖
     for (const prevImport of prevImports) {
-      if (!importedModules.has(prevImport)) {
+      if (!importedModules.has(prevImport.url)) {
         prevImport.importers.delete(mod);
       }
     }
@@ -72,7 +74,11 @@ export class ModuleGraph {
   invalidateModule(file: string) {
     const mod = this.idToModuleMap.get(file);
     if (mod) {
+      mod.lastHMRTimestamp = Date.now();
       mod.transformResult = null;
+      mod.importers.forEach((importer) => {
+        this.invalidateModule(importer.id!);
+      });
     }
   }
 

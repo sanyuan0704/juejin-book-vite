@@ -1,5 +1,4 @@
 import { NextHandleFunction } from "connect";
-import { pathExists, readFile } from "fs-extra";
 import { CLIENT_PUBLIC_PATH } from "../../constants";
 import { isImportRequest } from "../../utils";
 import sirv from "sirv";

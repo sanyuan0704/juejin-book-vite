@@ -1,7 +1,6 @@
 console.log("[vite] connecting...");
 
-const host = location.host;
-const socket = new WebSocket(`ws://${host}`, "vite-hmr");
+const socket = new WebSocket(`ws://localhost:__HMR_PORT__`, "vite-hmr");
 
 socket.addEventListener("message", async ({ data }) => {
   handleMessage(JSON.parse(data)).catch(console.error);
@@ -18,19 +17,13 @@ async function handleMessage(payload: any) {
   switch (payload.type) {
     case "connected":
       console.log(`[vite] connected.`);
-      // proxy(nginx, docker) hmr ws maybe caused timeout,
-      // so send ping package let ws keep alive.
-      setInterval(() => socket.send("ping"), 30000);
+      setInterval(() => socket.send("ping"), 1000);
       break;
 
     case "update":
       payload.updates.forEach((update: Update) => {
         if (update.type === "js-update") {
-          // TODO
           fetchUpdate(update);
-        } else {
-          // css-update
-          // this is only sent when a css file referenced with <link> is updated
         }
       });
       break;
@@ -73,11 +66,9 @@ export const createHotContext = (ownerPath: string) => {
   return {
     accept(deps: any, callback?: any) {
       if (typeof deps === "function" || !deps) {
-        // self-accept: hot.accept(() => {})
         // @ts-ignore
         acceptDeps([ownerPath], ([mod]) => deps && deps(mod));
       }
-      // TODO: more situations
     },
     prune(cb: (data: any) => void) {
       pruneMap.set(ownerPath, cb);
@@ -94,7 +85,6 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
 
   const modulesToUpdate = new Set<string>();
   if (isSelfUpdate) {
-    // self update - only update self
     modulesToUpdate.add(path);
   } else {
     // TODO
@@ -103,7 +93,6 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
   const qualifiedCallbacks = mod.callbacks.filter(({ deps }) => {
     return deps.some((dep) => modulesToUpdate.has(dep));
   });
-
   const base = "/";
   await Promise.all(
     Array.from(modulesToUpdate).map(async (dep) => {

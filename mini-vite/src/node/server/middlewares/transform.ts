@@ -1,6 +1,12 @@
 import { NextHandleFunction } from "connect";
 import { CLIENT_PUBLIC_PATH } from "../../constants";
-import { isJSRequest, isCSSRequest, isImportRequest } from "../../utils";
+import {
+  isJSRequest,
+  isCSSRequest,
+  isImportRequest,
+  isInternalRequest,
+  cleanUrl,
+} from "../../utils";
 import { ServerContext } from "../index";
 import createDebug from "debug";
 
@@ -11,6 +17,7 @@ export async function transformRequest(
   serverContext: ServerContext
 ) {
   const { moduleGraph, pluginContainer } = serverContext;
+  url = cleanUrl(url);
   let mod = await moduleGraph.getModuleByUrl(url);
   if (mod && mod.transformResult) {
     return mod.transformResult;
@@ -25,7 +32,7 @@ export async function transformRequest(
     mod = await moduleGraph.ensureEntryFromUrl(url);
     if (code) {
       transformResult = await pluginContainer.transform(
-        code,
+        code as string,
         resolvedResult?.id
       );
     }
@@ -51,8 +58,8 @@ export function transformMiddleware(
       isCSSRequest(url) ||
       // 静态资源的 import 请求，如 import logo from './logo.svg';
       isImportRequest(url) ||
-      // 内置的客户端脚本资源
-      url === CLIENT_PUBLIC_PATH
+      // 内置资源
+      isInternalRequest(url)
     ) {
       let result = await transformRequest(url, serverContext);
       if (!result) {
