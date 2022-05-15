@@ -23,7 +23,7 @@ export function importAnalysisPlugin(): Plugin {
       serverContext = s;
     },
     async transform(code: string, id: string) {
-      if (!isJSRequest(id)) {
+      if (!isJSRequest(id) || isInternalRequest(id)) {
         return null;
       }
       await init;
@@ -42,7 +42,7 @@ export function importAnalysisPlugin(): Plugin {
         const mod = moduleGraph.getModuleById(cleanedId);
         let resolvedId = `/${getShortName(resolved.id, serverContext.root)}`;
         if (mod && mod.lastHMRTimestamp > 0) {
-          resolvedId += "?t=" + mod.lastHMRTimestamp;
+          // resolvedId += "?t=" + mod.lastHMRTimestamp;
         }
         return resolvedId;
       };

@@ -14,12 +14,12 @@ import { Plugin } from "../plugin";
 
 export interface ServerContext {
   root: string;
-  moduleGraph: ModuleGraph;
   pluginContainer: PluginContainer;
   app: connect.Server;
+  plugins: Plugin[];
+  moduleGraph: ModuleGraph;
   ws: { send: (data: any) => void; close: () => void };
   watcher: FSWatcher;
-  plugins: Plugin[];
 }
 
 export async function startDevServer() {
@@ -35,15 +35,15 @@ export async function startDevServer() {
   });
   // WebSocket 对象
   const ws = createWebSocketServer(app);
-  // 开发服务器上下文
+  // // 开发服务器上下文
   const serverContext: ServerContext = {
     root: process.cwd(),
     app,
-    moduleGraph,
     pluginContainer,
+    plugins,
+    moduleGraph,
     ws,
     watcher,
-    plugins,
   };
   bindingHMREvents(serverContext);
   for (const plugin of plugins) {
@@ -52,7 +52,7 @@ export async function startDevServer() {
     }
   }
 
-  // 核心编译逻辑
+  // // 核心编译逻辑
   app.use(transformMiddleware(serverContext));
 
   // 入口 HTML 资源

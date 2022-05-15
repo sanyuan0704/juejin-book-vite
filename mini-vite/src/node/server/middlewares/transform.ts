@@ -57,9 +57,7 @@ export function transformMiddleware(
       isJSRequest(url) ||
       isCSSRequest(url) ||
       // 静态资源的 import 请求，如 import logo from './logo.svg';
-      isImportRequest(url) ||
-      // 内置资源
-      isInternalRequest(url)
+      isImportRequest(url)
     ) {
       let result = await transformRequest(url, serverContext);
       if (!result) {

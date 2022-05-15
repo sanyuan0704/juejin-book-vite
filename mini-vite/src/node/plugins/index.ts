@@ -1,20 +1,20 @@
-import { cssPlugin } from "./css";
 import { esbuildTransformPlugin } from "./esbuild";
 import { resolvePlugin } from "./resolve";
 import { importAnalysisPlugin } from "./importAnalysis";
 import { Plugin } from "../plugin";
-import { clientInjectPlugin } from "./clientInject";
+import { cssPlugin } from "./css";
 import { assetPlugin } from "./assets";
-import { reactRefresh } from "./react-hmr";
+import { clientInjectPlugin } from "./clientInject";
+import { reactHMRPlugin } from "./react-hmr";
 
 export function resolvePlugins(): Plugin[] {
   return [
+    clientInjectPlugin(),
     resolvePlugin(),
+    esbuildTransformPlugin(),
+    reactHMRPlugin(),
+    importAnalysisPlugin(),
     cssPlugin(),
     assetPlugin(),
-    esbuildTransformPlugin(),
-    clientInjectPlugin(),
-    reactRefresh(),
-    importAnalysisPlugin(),
   ];
 }

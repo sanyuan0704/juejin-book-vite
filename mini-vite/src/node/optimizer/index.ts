@@ -1,6 +1,5 @@
 import { build } from "esbuild";
-import resolve from "resolve";
-import { blue, green } from "picocolors";
+import { green } from "picocolors";
 import path from "path";
 import { scanPlugin } from "./scanPlugin";
 import { preBundlePlugin } from "./preBundlePlugin";
@@ -22,7 +21,7 @@ export async function optimize(root: string) {
     `${green("需要预构建的依赖")}:\n${[...deps]
       .map(green)
       .map((item) => `  ${item}`)
-      .join("\n")}`
+      .join("\n")}\n`
   );
 
   // 3. 预构建依赖

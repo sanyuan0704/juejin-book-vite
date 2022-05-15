@@ -4,6 +4,10 @@ import path from "path";
 import { isJSRequest } from "../utils";
 import { transformAsync } from "@babel/core";
 
+function loadPlugin(path: string): Promise<any> {
+  return import(path).then((module) => module.default || module);
+}
+
 const RUNTIME_PUBLIC_PATH = "/@react-refresh";
 
 const runtimeFilePath = path.resolve(
@@ -65,7 +69,7 @@ if (import.meta.hot) {
   }
 }`;
 
-export function reactRefresh(): Plugin {
+export function reactHMRPlugin(): Plugin {
   return {
     name: "m-vite:react-refresh",
     resolveId(id) {
@@ -104,8 +108,4 @@ export function reactRefresh(): Plugin {
       );
     },
   };
-}
-
-function loadPlugin(path: string): Promise<any> {
-  return import(path).then((module) => module.default || module);
 }

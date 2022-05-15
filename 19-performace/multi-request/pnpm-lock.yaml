@@ -1,0 +1,33 @@
+lockfileVersion: 5.3
+
+specifiers:
+  rollup: 0.30.0
+
+dependencies:
+  rollup: registry.npmmirror.com/rollup/0.30.0
+
+packages:
+
+  registry.npmmirror.com/rollup/0.30.0:
+    resolution: {integrity: sha512-yKGDMYzUHZNxuRVu+uH/LoDVKzjFB836q45sc539uVf56lqU+j8sr9AiPKRQ+d9NX0xa1kNPSW4B55stf5mi4g==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/rollup/-/rollup-0.30.0.tgz}
+    name: rollup
+    version: 0.30.0
+    hasBin: true
+    dependencies:
+      source-map-support: registry.npmmirror.com/source-map-support/0.4.18
+    dev: false
+
+  registry.npmmirror.com/source-map-support/0.4.18:
+    resolution: {integrity: sha512-try0/JqxPLF9nOjvSta7tVondkP5dwgyLDjVoyMDlmjugT2lRZ1OfsrYTkCd2hkDnJTKRbO/Rl3orm8vlsUzbA==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/source-map-support/-/source-map-support-0.4.18.tgz}
+    name: source-map-support
+    version: 0.4.18
+    dependencies:
+      source-map: registry.npmmirror.com/source-map/0.5.7
+    dev: false
+
+  registry.npmmirror.com/source-map/0.5.7:
+    resolution: {integrity: sha512-LbrmJOMUSdEVxIKvdcJzQC+nQhe8FUZQTXQy6+I75skNgn3OoQ0DZA8YnFa7gp8tqtL3KPf1kmo0R5DoApeSGQ==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/source-map/-/source-map-0.5.7.tgz}
+    name: source-map
+    version: 0.5.7
+    engines: {node: '>=0.10.0'}
+    dev: false

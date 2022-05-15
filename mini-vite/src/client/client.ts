@@ -36,13 +36,11 @@ interface HotModule {
 }
 
 interface HotCallback {
-  // the dependencies must be fetchable paths
   deps: string[];
   fn: (modules: object[]) => void;
 }
 
 const hotModulesMap = new Map<string, HotModule>();
-// const disposeMap = new Map<string, (data: any) => void | Promise<void>>();
 const pruneMap = new Map<string, (data: any) => void | Promise<void>>();
 
 export const createHotContext = (ownerPath: string) => {
@@ -64,9 +62,8 @@ export const createHotContext = (ownerPath: string) => {
   }
 
   return {
-    accept(deps: any, callback?: any) {
+    accept(deps: any) {
       if (typeof deps === "function" || !deps) {
-        // @ts-ignore
         acceptDeps([ownerPath], ([mod]) => deps && deps(mod));
       }
     },
@@ -76,30 +73,21 @@ export const createHotContext = (ownerPath: string) => {
   };
 };
 
-async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
+async function fetchUpdate({ path, timestamp }: Update) {
   const mod = hotModulesMap.get(path);
   if (!mod) return;
 
   const moduleMap = new Map();
-  const isSelfUpdate = path === acceptedPath;
-
   const modulesToUpdate = new Set<string>();
-  if (isSelfUpdate) {
-    modulesToUpdate.add(path);
-  } else {
-    // TODO
-  }
 
-  const qualifiedCallbacks = mod.callbacks.filter(({ deps }) => {
-    return deps.some((dep) => modulesToUpdate.has(dep));
-  });
-  const base = "/";
+  modulesToUpdate.add(path);
+
   await Promise.all(
     Array.from(modulesToUpdate).map(async (dep) => {
       const [path, query] = dep.split(`?`);
       try {
         const newMod = await import(
-          base + path.slice(1) + `?t=${timestamp}${query ? `&${query}` : ""}`
+          path + `?t=${timestamp}${query ? `&${query}` : ""}`
         );
         moduleMap.set(dep, newMod);
       } catch (e) {}
@@ -107,11 +95,10 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
   );
 
   return () => {
-    for (const { deps, fn } of qualifiedCallbacks) {
+    for (const { deps, fn } of mod.callbacks) {
       fn(deps.map((dep: any) => moduleMap.get(dep)));
     }
-    const loggedPath = isSelfUpdate ? path : `${acceptedPath} via ${path}`;
-    console.log(`[vite] hot updated: ${loggedPath}`);
+    console.log(`[vite] hot updated: ${path}`);
   };
 }
 

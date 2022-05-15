@@ -7,9 +7,14 @@ import path from "path";
 export function esbuildTransformPlugin(): Plugin {
   return {
     name: "m-vite:esbuild-transform",
-    load(id) {
+    async load(id) {
       if (isJSRequest(id)) {
-        return readFile(id, "utf-8");
+        try {
+          const code = await readFile(id, "utf-8");
+          return code;
+        } catch (e) {
+          return null;
+        }
       }
     },
     async transform(code, id) {

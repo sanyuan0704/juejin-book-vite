@@ -1,0 +1,51 @@
+lockfileVersion: 5.3
+
+specifiers:
+  '@loadable/component': ^5.15.2
+
+dependencies:
+  '@loadable/component': registry.npmmirror.com/@loadable/component/5.15.2
+
+packages:
+
+  registry.npmmirror.com/@babel/runtime/7.17.8:
+    resolution: {integrity: sha512-dQpEpK0O9o6lj6oPu0gRDbbnk+4LeHlNcBpspf6Olzt3GIX4P1lWF1gS+pHLDFlaJvbR6q7jCfQ08zA4QJBnmA==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@babel/runtime/-/runtime-7.17.8.tgz}
+    name: '@babel/runtime'
+    version: 7.17.8
+    engines: {node: '>=6.9.0'}
+    dependencies:
+      regenerator-runtime: registry.npmmirror.com/regenerator-runtime/0.13.9
+    dev: false
+
+  registry.npmmirror.com/@loadable/component/5.15.2:
+    resolution: {integrity: sha512-ryFAZOX5P2vFkUdzaAtTG88IGnr9qxSdvLRvJySXcUA4B4xVWurUNADu3AnKPksxOZajljqTrDEDcYjeL4lvLw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@loadable/component/-/component-5.15.2.tgz}
+    name: '@loadable/component'
+    version: 5.15.2
+    engines: {node: '>=8'}
+    peerDependencies:
+      react: '>=16.3.0'
+    dependencies:
+      '@babel/runtime': registry.npmmirror.com/@babel/runtime/7.17.8
+      hoist-non-react-statics: registry.npmmirror.com/hoist-non-react-statics/3.3.2
+      react-is: registry.npmmirror.com/react-is/16.13.1
+    dev: false
+
+  registry.npmmirror.com/hoist-non-react-statics/3.3.2:
+    resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/hoist-non-react-statics/-/hoist-non-react-statics-3.3.2.tgz}
+    name: hoist-non-react-statics
+    version: 3.3.2
+    dependencies:
+      react-is: registry.npmmirror.com/react-is/16.13.1
+    dev: false
+
+  registry.npmmirror.com/react-is/16.13.1:
+    resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/react-is/-/react-is-16.13.1.tgz}
+    name: react-is
+    version: 16.13.1
+    dev: false
+
+  registry.npmmirror.com/regenerator-runtime/0.13.9:
+    resolution: {integrity: sha512-p3VT+cOEgxFsRRA9X4lkI1E+k2/CtnKtU4gcxyaCUreilL/vqI6CdZ3wxVUx3UOUg+gnUOQQcRI7BmSI656MYA==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/regenerator-runtime/-/regenerator-runtime-0.13.9.tgz}
+    name: regenerator-runtime
+    version: 0.13.9
+    dev: false

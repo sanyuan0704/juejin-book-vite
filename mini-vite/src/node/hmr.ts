@@ -1,6 +1,5 @@
 import { ServerContext } from "./server/index";
 import { blue, green } from "picocolors";
-import path from "path";
 import { getShortName } from "./utils";
 
 export function bindingHMREvents(serverContext: ServerContext) {

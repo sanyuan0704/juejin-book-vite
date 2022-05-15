@@ -1,7 +1,12 @@
-import { HASH_RE, JS_TYPES_RE, QEURY_RE } from "./constants";
+import {
+  CLIENT_PUBLIC_PATH,
+  HASH_RE,
+  JS_TYPES_RE,
+  QEURY_RE,
+} from "./constants";
 import path from "path";
 
-const INTERNAL_LIST = ["/@vite/client", "/@react-refresh"];
+const INTERNAL_LIST = [CLIENT_PUBLIC_PATH, "/@react-refresh"];
 
 export const cleanUrl = (url: string): string =>
   url.replace(HASH_RE, "").replace(QEURY_RE, "");
@@ -9,8 +14,16 @@ export const cleanUrl = (url: string): string =>
 export const isCSSRequest = (id: string): boolean =>
   cleanUrl(id).endsWith(".css");
 
-export const isJSRequest = (id: string): boolean =>
-  JS_TYPES_RE.test(cleanUrl(id));
+export const isJSRequest = (id: string): boolean => {
+  id = cleanUrl(id);
+  if (JS_TYPES_RE.test(id)) {
+    return true;
+  }
+  if (!path.extname(id) && !id.endsWith("/")) {
+    return true;
+  }
+  return false;
+};
 
 export function isImportRequest(url: string): boolean {
   return url.endsWith("?import");
