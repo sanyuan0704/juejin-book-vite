@@ -1,4 +1,4 @@
-lockfileVersion: 5.3
+lockfileVersion: 5.4
 
 specifiers:
   '@svgr/core': ^6.2.1
@@ -256,6 +256,8 @@ packages:
     version: 7.17.3
     engines: {node: '>=6.0.0'}
     hasBin: true
+    dependencies:
+      '@babel/types': registry.npmmirror.com/@babel/types/7.17.0
     dev: true
 
   registry.npmmirror.com/@babel/plugin-syntax-jsx/7.16.7_@babel+core@7.17.5:

@@ -42,14 +42,14 @@
 //     </div>
 //   )
 // }
-import Logo from './logo.svg'
+import Logo from "./logo.svg";
 
 function App() {
   return (
     <>
-      <Logo />
+      <img src={Logo} />
     </>
-  )
+  );
 }
 
-export default App
+export default App;
