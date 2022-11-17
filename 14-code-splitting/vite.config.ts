@@ -1,17 +1,18 @@
-import { defineConfig, resolvePackageEntry, resolvePackageData } from "vite";
+import { defineConfig, normalizePath } from "vite";
 import react from "@vitejs/plugin-react";
 import resolve from 'resolve';
 
 const chunkGroups = {
   'react-vendor': [
-    require.resolve('react'),
-    require.resolve('react-dom')
+    normalizePath(require.resolve('react')),
+    normalizePath(require.resolve('react-dom'))
   ],
 }
 
 const cache = new Map();
 
 function isDepInclude (id: string, depPaths: string[], importChain: string[], getModuleInfo): boolean | undefined  {
+  id = normalizePath(id);
   const key = `${id}-${depPaths.join('|')}`;
 
   // 出现循环依赖，不考虑
@@ -73,14 +74,14 @@ export default defineConfig({
         //   return 'vendor';
         // }
         // 3. 函数配置，解决循环依赖的问题
-        // manualChunks(id, { getModuleInfo }) { 
-        //   for (const group of Object.keys(chunkGroups)) {
-        //     const deps = chunkGroups[group];
-        //     if (id.includes('node_modules') && isDepInclude(id, deps, [], getModuleInfo)) { 
-        //       return group;
-        //     }
-        //   }
-        // }
+        manualChunks(id, { getModuleInfo }) { 
+          for (const group of Object.keys(chunkGroups)) {
+            const deps = chunkGroups[group];
+            if (id.includes('node_modules') && isDepInclude(id, deps, [], getModuleInfo)) { 
+              return group;
+            }
+          }
+        }
       },
     },
   },
