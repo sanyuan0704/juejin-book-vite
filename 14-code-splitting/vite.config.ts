@@ -78,7 +78,7 @@ export default defineConfig({
           for (const group of Object.keys(chunkGroups)) {
             const deps = chunkGroups[group];
             if (id.includes('node_modules') && isDepInclude(id, deps, [], getModuleInfo)) { 
-              return group;
+              return group
             }
           }
         }
