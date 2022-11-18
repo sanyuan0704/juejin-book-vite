@@ -5,6 +5,7 @@ import path from "path";
 import resolve from "resolve";
 import fs from "fs-extra";
 import createDebug from "debug";
+import { normalizePath } from "../utils";
 
 const debug = createDebug("dev");
 
@@ -45,7 +46,7 @@ export function preBundlePlugin(deps: Set<string>): Plugin {
           await init;
           const id = loadInfo.path;
           const root = process.cwd();
-          const entryPath = resolve.sync(id, { basedir: root });
+          const entryPath = normalizePath(resolve.sync(id, { basedir: root }));
           const code = await fs.readFile(entryPath, "utf-8");
           const [imports, exports] = await parse(code);
           let proxyModule = [];

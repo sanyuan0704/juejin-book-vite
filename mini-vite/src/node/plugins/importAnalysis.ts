@@ -9,6 +9,8 @@ import {
   getShortName,
   isInternalRequest,
   isJSRequest,
+  isWindows,
+  normalizePath,
 } from "../utils";
 import MagicString from "magic-string";
 import path from "path";
@@ -33,7 +35,7 @@ export function importAnalysisPlugin(): Plugin {
       const resolve = async (id: string, importer?: string) => {
         const resolved = await serverContext.pluginContainer.resolveId(
           id,
-          importer
+          normalizePath(importer)
         );
         if (!resolved) {
           return;
@@ -55,16 +57,14 @@ export function importAnalysisPlugin(): Plugin {
         // 静态资源
         if (modSource.endsWith(".svg")) {
           // 加上 ?import 后缀
-          const resolvedUrl = path.join(path.dirname(id), modSource);
+          const resolvedUrl = await resolve(modSource, id);
           ms.overwrite(modStart, modEnd, `${resolvedUrl}?import`);
           continue;
         }
         // 第三方库: 路径重写到预构建产物的路径
         if (BARE_IMPORT_RE.test(modSource)) {
-          const bundlePath = path.join(
-            serverContext.root,
-            PRE_BUNDLE_DIR,
-            `${modSource}.js`
+          const bundlePath = normalizePath(
+            path.join('/', PRE_BUNDLE_DIR, `${modSource}.js`)
           );
           ms.overwrite(modStart, modEnd, bundlePath);
           importedModules.add(bundlePath);
