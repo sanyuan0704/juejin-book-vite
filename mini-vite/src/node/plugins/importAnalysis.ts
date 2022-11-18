@@ -25,7 +25,6 @@ export function importAnalysisPlugin(): Plugin {
       serverContext = s;
     },
     async transform(code: string, id: string) {
-      console.log(id)
       if (!isJSRequest(id) || isInternalRequest(id)) {
         return null;
       }

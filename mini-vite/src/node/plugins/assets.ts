@@ -13,7 +13,6 @@ export function assetPlugin(): Plugin {
     },
     async load(id) {
       const cleanedId = removeImportQuery(cleanUrl(id));
-      console.log(cleanedId, serverContext.root)
       const resolvedId = `/${getShortName(normalizePath(id), serverContext.root)}`;
 
       // 这里仅处理 svg

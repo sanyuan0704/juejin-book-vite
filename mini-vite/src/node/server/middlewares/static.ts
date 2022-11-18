@@ -12,7 +12,6 @@ export function staticMiddleware(root: string): NextHandleFunction {
     if (isImportRequest(req.url) || req.url === CLIENT_PUBLIC_PATH) {
       return;
     }
-    console.log(req.url)
     serveFromRoot(req, res, next);
   };
 }
