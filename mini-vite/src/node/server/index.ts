@@ -11,6 +11,7 @@ import { createWebSocketServer } from "../ws";
 import chokidar, { FSWatcher } from "chokidar";
 import { bindingHMREvents } from "../hmr";
 import { Plugin } from "../plugin";
+import { normalizePath } from "../utils";
 
 export interface ServerContext {
   root: string;
@@ -37,7 +38,7 @@ export async function startDevServer() {
   const ws = createWebSocketServer(app);
   // // 开发服务器上下文
   const serverContext: ServerContext = {
-    root: process.cwd(),
+    root: normalizePath(process.cwd()),
     app,
     pluginContainer,
     plugins,
@@ -59,7 +60,7 @@ export async function startDevServer() {
   app.use(indexHtmlMiddware(serverContext));
 
   // 静态资源
-  app.use(staticMiddleware());
+  app.use(staticMiddleware(serverContext.root));
 
   app.listen(3000, async () => {
     await optimize(root);

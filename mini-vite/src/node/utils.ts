@@ -5,6 +5,7 @@ import {
   QEURY_RE,
 } from "./constants";
 import path from "path";
+import os from "os";
 
 const INTERNAL_LIST = [CLIENT_PUBLIC_PATH, "/@react-refresh"];
 
@@ -14,7 +15,8 @@ export const cleanUrl = (url: string): string =>
 export const isCSSRequest = (id: string): boolean =>
   cleanUrl(id).endsWith(".css");
 
-export const isJSRequest = (id: string): boolean => {
+
+  export const isJSRequest = (id: string): boolean => {
   id = cleanUrl(id);
   if (JS_TYPES_RE.test(id)) {
     return true;
@@ -44,3 +46,12 @@ export function isPlainObject(obj: any): boolean {
 export function getShortName(file: string, root: string) {
   return file.startsWith(root + "/") ? path.posix.relative(root, file) : file;
 }
+
+export function slash(p: string): string {
+  return p.replace(/\\/g, "/");
+}
+
+export function normalizePath(id: string): string {
+  return path.posix.normalize(isWindows ? slash(id) : id);
+}
+export const isWindows = os.platform() === "win32";

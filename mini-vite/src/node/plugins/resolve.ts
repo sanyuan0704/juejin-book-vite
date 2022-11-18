@@ -4,7 +4,7 @@ import { ServerContext } from "../server/index";
 import path from "path";
 import { pathExists } from "fs-extra";
 import { DEFAULT_EXTERSIONS } from "../constants";
-import { removeImportQuery, cleanUrl, isInternalRequest } from "../utils";
+import { removeImportQuery, cleanUrl, isInternalRequest, normalizePath, isWindows } from "../utils";
 
 export function resolvePlugin(): Plugin {
   let serverContext: ServerContext;
@@ -35,7 +35,7 @@ export function resolvePlugin(): Plugin {
         let resolvedId: string;
         // ./App.tsx
         if (hasExtension) {
-          resolvedId = resolve.sync(id, { basedir: path.dirname(importer) });
+          resolvedId = normalizePath(resolve.sync(id, { basedir: path.dirname(importer) }));
           if (await pathExists(resolvedId)) {
             return { id: resolvedId };
           }
@@ -44,9 +44,9 @@ export function resolvePlugin(): Plugin {
           for (const extname of DEFAULT_EXTERSIONS) {
             try {
               const withExtension = `${id}${extname}`;
-              resolvedId = resolve.sync(withExtension, {
+              resolvedId = normalizePath(resolve.sync(withExtension, {
                 basedir: path.dirname(importer),
-              });
+              }));
               if (await pathExists(resolvedId)) {
                 return { id: resolvedId };
               }
