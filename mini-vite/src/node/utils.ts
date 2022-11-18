@@ -16,7 +16,7 @@ export const isCSSRequest = (id: string): boolean =>
   cleanUrl(id).endsWith(".css");
 
 
-  export const isJSRequest = (id: string): boolean => {
+export const isJSRequest = (id: string): boolean => {
   id = cleanUrl(id);
   if (JS_TYPES_RE.test(id)) {
     return true;
