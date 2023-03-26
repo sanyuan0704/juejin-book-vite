@@ -1,5 +1,6 @@
 {
 	"dependencies": {
-		"@loadable/component": "^5.15.2"
+		"@loadable/component": "^5.15.2",
+		"@types/node": "^18.15.10"
 	}
 }
