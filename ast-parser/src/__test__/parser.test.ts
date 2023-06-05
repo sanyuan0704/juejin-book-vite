@@ -419,4 +419,49 @@ describe("testParserFunction", () => {
     };
     expect(parse(input)).toEqual(ast);
   });
+
+  test("test function expression", () => {
+    const input = `const foo = function() {}`;
+    expect(parse(input)).toMatchInlineSnapshot(`
+      {
+        "body": [
+          {
+            "declarations": [
+              {
+                "end": 25,
+                "id": {
+                  "end": 9,
+                  "name": "foo",
+                  "start": 6,
+                  "type": "Identifier",
+                },
+                "init": {
+                  "body": {
+                    "body": [],
+                    "end": 25,
+                    "start": 23,
+                    "type": "BlockStatement",
+                  },
+                  "end": 25,
+                  "id": null,
+                  "params": [],
+                  "start": 12,
+                  "type": "FunctionExpression",
+                },
+                "start": 6,
+                "type": "VariableDeclarator",
+              },
+            ],
+            "end": 25,
+            "kind": "const",
+            "start": 0,
+            "type": "VariableDeclaration",
+          },
+        ],
+        "end": 25,
+        "start": 0,
+        "type": "Program",
+      }
+    `);
+  });
 });
