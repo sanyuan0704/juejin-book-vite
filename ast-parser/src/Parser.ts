@@ -167,7 +167,7 @@ export class Parser {
         exportDeclaration = {
           type: NodeType.ExportDefaultDeclaration,
           declaration: local,
-          start: local.start,
+          start: start,
           end: local.end,
         };
       }
